@@ -1,0 +1,422 @@
+% APMCM Competition Paper Template
+% Based on 2023-2024 APMCM LaTeX templates
+
+\documentclass[12pt,a4paper]{article}
+
+% ==================== Packages ====================
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{algorithm2e}
+\usepackage{hyperref}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{cite}
+
+% ==================== Custom Commands ====================
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\text{Var}}
+\newcommand{\Cov}{\text{Cov}}
+
+% ==================== Document Info ====================
+\title{\textbf{Development Analysis and Forecasting of [Topic]}}
+\author{Team \#[Your Team Number]}
+\date{\today}
+
+% ==================== Hyperref Setup ====================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+\begin{document}
+
+\maketitle
+
+% ==================== Abstract ====================
+\begin{abstract}
+% Background (1-2 sentences)
+[Topic] has become increasingly important in recent years due to [reason]. Understanding [specific aspect] is crucial for [stakeholders] to make informed decisions.
+
+% Problem statement (1 sentence)
+This paper addresses the problem of [specific problem statement from competition].
+
+% Approach (2-3 sentences)
+We develop a comprehensive analytical framework combining time series analysis, regression modeling, and sensitivity analysis. Our approach involves [key step 1], [key step 2], and [key step 3]. We validate our models using historical data and cross-validation techniques.
+
+% Key results (2-3 sentences)
+Our analysis reveals that [key finding 1]. The forecasting results indicate [key finding 2] with an average error of [X]\%. Sensitivity analysis demonstrates that [key finding 3].
+
+% Conclusion (1 sentence)
+These findings provide valuable insights for [stakeholders] and suggest that [main conclusion].
+\end{abstract}
+
+\noindent\textbf{Keywords:} time series forecasting, regression analysis, sensitivity analysis, [domain-specific term], [another term]
+
+% ==================== Table of Contents ====================
+\tableofcontents
+\newpage
+
+% ==================== 1. Introduction ====================
+\section{Introduction}
+
+\subsection{Background}
+In recent years, [topic] has attracted considerable attention from researchers, policymakers, and industry practitioners. According to [source], [relevant statistic or fact]. This trend is driven by several factors including [factor 1], [factor 2], and [factor 3].
+
+The significance of this topic lies in [explain importance]. Understanding [specific aspect] is essential for [stakeholders] to [purpose].
+
+\subsection{Problem Statement}
+This paper addresses the following questions posed in the competition:
+
+\begin{enumerate}
+    \item \textbf{Question 1:} [Restate question 1 from problem statement]
+    \item \textbf{Question 2:} [Restate question 2 from problem statement]
+    \item \textbf{Question 3:} [Restate question 3 from problem statement]
+    \item \textbf{Question 4:} [Restate question 4 from problem statement]
+\end{enumerate}
+
+\subsection{Our Approach}
+To address these challenges, we develop a multi-faceted analytical approach:
+
+\begin{itemize}
+    \item \textbf{Data Analysis:} We analyze [data description] spanning [time period], including [key variables].
+
+    \item \textbf{Modeling Framework:} We employ ARIMA models for time series forecasting, multiple regression for factor analysis, and optimization techniques for [specific purpose].
+
+    \item \textbf{Validation:} We validate our models using cross-validation, residual analysis, and comparison with baseline models.
+
+    \item \textbf{Sensitivity Analysis:} We conduct comprehensive sensitivity analysis to assess model robustness.
+\end{itemize}
+
+\subsection{Paper Organization}
+The remainder of this paper is organized as follows. Section 2 presents our problem analysis and data exploration. Section 3 lists our assumptions and justifications. Section 4 develops our mathematical models. Section 5 presents model solutions and results. Section 6 conducts sensitivity analysis. Section 7 discusses strengths and weaknesses of our approach. Section 8 concludes.
+
+% ==================== 2. Problem Analysis ====================
+\section{Problem Analysis}
+
+\subsection{Problem Decomposition}
+We decompose the overall problem into four sub-problems:
+
+\begin{enumerate}
+    \item \textbf{Sub-problem 1:} [Description]
+    \begin{itemize}
+        \item Input: [What data/information is available]
+        \item Output: [What needs to be produced]
+        \item Approach: [Brief description of method]
+    \end{itemize}
+
+    \item \textbf{Sub-problem 2:} [Description]
+    \item \textbf{Sub-problem 3:} [Description]
+    \item \textbf{Sub-problem 4:} [Description]
+\end{enumerate}
+
+\subsection{Data Analysis}
+We analyze the provided data in Attachments 1-3. Table~\ref{tab:data_summary} summarizes the key characteristics.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Summary of Available Data}
+    \label{tab:data_summary}
+    \begin{tabular}{llll}
+        \toprule
+        Dataset & Time Period & Variables & Observations \\
+        \midrule
+        Attachment 1 & 2019-2023 & [Variables] & [N] \\
+        Attachment 2 & 2019-2023 & [Variables] & [N] \\
+        Attachment 3 & 2019-2023 & [Variables] & [N] \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Figure~\ref{fig:data_exploration} shows the historical trends. We observe that [key observation 1] and [key observation 2].
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/data_exploration.pdf}
+    \caption{Historical trends of key variables from 2019 to 2023.}
+    \label{fig:data_exploration}
+\end{figure}
+
+\subsection{Key Challenges}
+The main challenges in this problem are:
+\begin{enumerate}
+    \item \textbf{Limited data:} Only 5 years of historical data available
+    \item \textbf{Multiple factors:} Need to account for [factor 1], [factor 2], etc.
+    \item \textbf{Uncertainty:} Future predictions subject to policy changes
+\end{enumerate}
+
+% ==================== 3. Assumptions ====================
+\section{Assumptions and Justifications}
+
+We make the following assumptions:
+
+\begin{enumerate}
+    \item \textbf{Assumption 1:} [State assumption clearly]
+
+    \textit{Justification:} [Explain why this assumption is reasonable]
+
+    \textit{Validity:} [Discuss when this assumption holds]
+
+    \item \textbf{Assumption 2:} Historical trends continue in the near future
+
+    \textit{Justification:} Time series models assume that patterns observed in historical data persist, which is reasonable for short-term forecasts (3 years).
+
+    \textit{Validity:} This assumption is valid in stable economic conditions but may not hold during major disruptions.
+
+    \item \textbf{Assumption 3:} [State assumption]
+
+    \textit{Justification:} [Explain]
+
+    \textit{Validity:} [Discuss]
+\end{enumerate}
+
+% ==================== 4. Model Development ====================
+\section{Model Development}
+
+\subsection{Model 1: Time Series Forecasting (ARIMA)}
+
+\subsubsection{Model Formulation}
+We formulate the forecasting problem using an ARIMA model. Let $y_t$ denote the value of [variable] at time $t$, where $t = 1, 2, \ldots, T$. The ARIMA$(p,d,q)$ model is defined as:
+
+\begin{equation}
+    \phi(B)(1-B)^d y_t = \theta(B)\epsilon_t
+    \label{eq:arima}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $B$ is the backshift operator: $B y_t = y_{t-1}$
+    \item $\phi(B) = 1 - \phi_1 B - \phi_2 B^2 - \cdots - \phi_p B^p$ is the AR polynomial
+    \item $\theta(B) = 1 + \theta_1 B + \theta_2 B^2 + \cdots + \theta_q B^q$ is the MA polynomial
+    \item $d$ is the degree of differencing
+    \item $\epsilon_t \sim \mathcal{N}(0, \sigma^2)$ is white noise
+\end{itemize}
+
+\subsubsection{Parameter Estimation}
+We estimate the parameters $(\phi_1, \ldots, \phi_p, \theta_1, \ldots, \theta_q, \sigma^2)$ using maximum likelihood estimation (MLE). The log-likelihood function is:
+
+\begin{equation}
+    \ell(\phi, \theta, \sigma^2) = -\frac{T}{2}\log(2\pi\sigma^2) - \frac{1}{2\sigma^2}\sum_{t=1}^{T}\epsilon_t^2
+    \label{eq:likelihood}
+\end{equation}
+
+We select the order $(p,d,q)$ using the Akaike Information Criterion (AIC):
+
+\begin{equation}
+    \text{AIC} = -2\ell + 2k
+    \label{eq:aic}
+\end{equation}
+
+where $k = p + q + 1$ is the number of parameters.
+
+\subsubsection{Model Justification}
+We choose ARIMA because:
+\begin{enumerate}
+    \item It is well-suited for time series data with trends
+    \item It can capture both short-term and long-term dependencies
+    \item It has been widely validated in forecasting applications
+\end{enumerate}
+
+\subsection{Model 2: Multiple Regression}
+
+\subsubsection{Model Formulation}
+To analyze the factors affecting [dependent variable], we develop a multiple regression model:
+
+\begin{equation}
+    y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \cdots + \beta_p x_{ip} + \epsilon_i
+    \label{eq:regression}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $y_i$ is the dependent variable for observation $i$
+    \item $x_{ij}$ are the independent variables (factors)
+    \item $\beta_j$ are the regression coefficients
+    \item $\epsilon_i \sim \mathcal{N}(0, \sigma^2)$ is the error term
+\end{itemize}
+
+\subsubsection{Parameter Estimation}
+We estimate the coefficients using ordinary least squares (OLS):
+
+\begin{equation}
+    \hat{\boldsymbol{\beta}} = (\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y}
+    \label{eq:ols}
+\end{equation}
+
+where $\mathbf{X}$ is the design matrix and $\mathbf{y}$ is the response vector.
+
+% ==================== 5. Results ====================
+\section{Model Solution and Results}
+
+\subsection{Question 1: [Question Title]}
+
+\subsubsection{Model Implementation}
+We implement the ARIMA model using Python's \texttt{statsmodels} library. After testing various orders, we select ARIMA$(1,1,1)$ based on minimum AIC.
+
+\subsubsection{Results}
+Table~\ref{tab:q1_results} presents the forecasting results for the next three years.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Forecasting Results for Question 1}
+    \label{tab:q1_results}
+    \begin{tabular}{lrrr}
+        \toprule
+        Year & Predicted Value & 95\% CI Lower & 95\% CI Upper \\
+        \midrule
+        2026 & 1250.5 & 1180.2 & 1320.8 \\
+        2027 & 1320.3 & 1235.7 & 1404.9 \\
+        2028 & 1395.8 & 1295.4 & 1496.2 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Figure~\ref{fig:q1_forecast} visualizes the historical data and forecasts.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/q1_forecast.pdf}
+    \caption{Historical data (2019-2023) and forecasts (2026-2028) with 95\% confidence intervals.}
+    \label{fig:q1_forecast}
+\end{figure}
+
+\subsubsection{Model Validation}
+We validate the model using:
+\begin{itemize}
+    \item \textbf{Residual Analysis:} Residuals are approximately normally distributed with mean near zero
+    \item \textbf{Ljung-Box Test:} $p = 0.45 > 0.05$, indicating no significant autocorrelation in residuals
+    \item \textbf{RMSE:} Root mean squared error is 45.2, representing 3.6\% of the mean value
+\end{itemize}
+
+\subsection{Question 2: [Question Title]}
+[Similar structure as Question 1]
+
+% ==================== 6. Sensitivity Analysis ====================
+\section{Sensitivity Analysis}
+
+To assess the robustness of our models, we conduct sensitivity analysis on key parameters.
+
+\subsection{Parameter: [Parameter Name]}
+We vary [parameter] from [min] to [max] while holding other parameters constant. Figure~\ref{fig:sensitivity_param1} shows the results.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/sensitivity_analysis.pdf}
+    \caption{Sensitivity analysis for [parameter]. The output shows [stable/moderate/high] sensitivity to changes in this parameter.}
+    \label{fig:sensitivity_param1}
+\end{figure}
+
+Our analysis reveals:
+\begin{itemize}
+    \item When [parameter] increases by 10\%, the output changes by [X]\%
+    \item The model is most sensitive to [parameter Y]
+    \item The relationship between [parameter] and output is [linear/nonlinear]
+\end{itemize}
+
+% ==================== 7. Strengths and Weaknesses ====================
+\section{Strengths and Weaknesses}
+
+\subsection{Strengths}
+\begin{enumerate}
+    \item \textbf{Comprehensive Framework:} Our approach combines multiple modeling techniques, providing robust and cross-validated results.
+
+    \item \textbf{Statistical Rigor:} All models are validated using standard statistical tests and metrics.
+
+    \item \textbf{Practical Applicability:} Our forecasts include confidence intervals, providing decision-makers with uncertainty quantification.
+
+    \item \textbf{Sensitivity Analysis:} We thoroughly examine model robustness to parameter variations.
+\end{enumerate}
+
+\subsection{Weaknesses}
+\begin{enumerate}
+    \item \textbf{Limited Historical Data:} Only 5 years of data may not capture long-term cycles or rare events.
+
+    \item \textbf{Assumption Dependence:} Our forecasts rely on assumptions that may not hold during major disruptions (e.g., pandemics, policy changes).
+
+    \item \textbf{Linear Relationships:} Some models assume linear relationships, which may oversimplify complex dynamics.
+
+    \item \textbf{External Factors:} We do not explicitly model all external factors (e.g., technological changes, consumer preferences).
+\end{enumerate}
+
+\subsection{Potential Improvements}
+Future work could:
+\begin{itemize}
+    \item Incorporate additional data sources
+    \item Develop nonlinear models (e.g., neural networks)
+    \item Include scenario analysis for policy changes
+    \item Extend forecasting horizon with uncertainty quantification
+\end{itemize}
+
+% ==================== 8. Conclusions ====================
+\section{Conclusions}
+
+In this paper, we developed a comprehensive analytical framework to address [problem statement]. Our main findings are:
+
+\begin{enumerate}
+    \item \textbf{Finding 1:} [Key result from Question 1]
+
+    \item \textbf{Finding 2:} [Key result from Question 2]
+
+    \item \textbf{Finding 3:} [Key result from Question 3]
+
+    \item \textbf{Finding 4:} [Key result from Question 4]
+\end{enumerate}
+
+Our sensitivity analysis demonstrates that the models are [robust/moderately sensitive] to parameter variations, with [parameter X] having the largest impact.
+
+These findings provide valuable insights for [stakeholders]. Specifically, our results suggest that [main conclusion and recommendation].
+
+Future research could extend this work by [potential extension 1] and [potential extension 2].
+
+% ==================== References ====================
+\begin{thebibliography}{99}
+
+\bibitem{ref1}
+Author, A. (Year). Title of paper. \textit{Journal Name}, Volume(Issue), pages.
+
+\bibitem{ref2}
+Author, B. and Author, C. (Year). Title of book. Publisher.
+
+\bibitem{ref3}
+Organization. (Year). Title of report. Retrieved from URL.
+
+\end{thebibliography}
+
+% ==================== Appendices ====================
+\appendix
+
+\section{Data Tables}
+[Include detailed data tables if needed]
+
+\section{Additional Figures}
+[Include supplementary figures]
+
+\section{Code}
+The complete code for our analysis is available at [repository URL or included below].
+
+\begin{verbatim}
+# Main execution script
+import numpy as np
+import pandas as pd
+from statsmodels.tsa.arima.model import ARIMA
+
+# Load data
+df = pd.read_csv('data.csv')
+
+# Fit ARIMA model
+model = ARIMA(df['value'], order=(1,1,1))
+fitted = model.fit()
+
+# Forecast
+forecast = fitted.forecast(steps=3)
+print(forecast)
+\end{verbatim}
+
+\end{document}
