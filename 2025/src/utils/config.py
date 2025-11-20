@@ -1,17 +1,32 @@
-"""
-Configuration and path management for APMCM 2025 Problem C.
-
-This module provides centralized configuration for paths, random seeds,
-and other global settings.
-"""
+"""Configuration and path management for APMCM 2025 Problem C."""
 
 from pathlib import Path
+import os
 import random
 import numpy as np
 
 
 # === Project Root ===
 PROJECT_ROOT = Path(__file__).resolve().parents[2]  # Go up to 2025/
+WORKSPACE_ROOT = PROJECT_ROOT.parent
+ENV_FILE = WORKSPACE_ROOT / ".env"
+
+
+def load_env_file(path: Path = ENV_FILE) -> None:
+    """Load key=value pairs from .env without overriding existing vars."""
+    if not path.exists():
+        return
+
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        os.environ.setdefault(key, value)
 
 # === Data Paths ===
 DATA_DIR = PROJECT_ROOT / "data"
@@ -90,6 +105,6 @@ def apply_plot_style() -> None:
         pass  # matplotlib not installed yet
 
 
-# Initialize on import
+load_env_file()
 set_random_seed()
 ensure_directories()

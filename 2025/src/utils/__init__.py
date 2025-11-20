@@ -14,6 +14,12 @@ from .config import (
 
 from .data_loader import TariffDataLoader, load_processed_data
 
+from .data_fetch import (
+    DataFetchError,
+    fetch_un_comtrade_soybeans,
+    fetch_fred_series,
+)
+
 from .mapping import (
     HSMapper,
     CountryMapper,
@@ -47,6 +53,10 @@ __all__ = [
     # Data loader
     'TariffDataLoader',
     'load_processed_data',
+    # Data fetch helpers
+    'DataFetchError',
+    'fetch_un_comtrade_soybeans',
+    'fetch_fred_series',
     # Mapping
     'HSMapper',
     'CountryMapper',
