@@ -1,0 +1,11 @@
+indicator,country,countryiso3code,date,value,unit,obs_status,decimal
+"{'id': 'TM.TAX.MANF.SM.AR.ZS', 'value': 'Tariff rate, applied, simple mean, manufactured products (%)'}","{'id': 'CN', 'value': 'China'}",CHN,2024,,,,1
+"{'id': 'TM.TAX.MANF.SM.AR.ZS', 'value': 'Tariff rate, applied, simple mean, manufactured products (%)'}","{'id': 'CN', 'value': 'China'}",CHN,2023,,,,1
+"{'id': 'TM.TAX.MANF.SM.AR.ZS', 'value': 'Tariff rate, applied, simple mean, manufactured products (%)'}","{'id': 'CN', 'value': 'China'}",CHN,2022,5.21,,,1
+"{'id': 'TM.TAX.MANF.SM.AR.ZS', 'value': 'Tariff rate, applied, simple mean, manufactured products (%)'}","{'id': 'CN', 'value': 'China'}",CHN,2021,5.13,,,1
+"{'id': 'TM.TAX.MANF.SM.AR.ZS', 'value': 'Tariff rate, applied, simple mean, manufactured products (%)'}","{'id': 'CN', 'value': 'China'}",CHN,2020,5.13,,,1
+"{'id': 'TM.TAX.MANF.SM.AR.ZS', 'value': 'Tariff rate, applied, simple mean, manufactured products (%)'}","{'id': 'CN', 'value': 'China'}",CHN,2019,5.21,,,1
+"{'id': 'TM.TAX.MANF.SM.AR.ZS', 'value': 'Tariff rate, applied, simple mean, manufactured products (%)'}","{'id': 'CN', 'value': 'China'}",CHN,2018,7.5,,,1
+"{'id': 'TM.TAX.MANF.SM.AR.ZS', 'value': 'Tariff rate, applied, simple mean, manufactured products (%)'}","{'id': 'CN', 'value': 'China'}",CHN,2017,8.35,,,1
+"{'id': 'TM.TAX.MANF.SM.AR.ZS', 'value': 'Tariff rate, applied, simple mean, manufactured products (%)'}","{'id': 'CN', 'value': 'China'}",CHN,2016,7.84,,,1
+"{'id': 'TM.TAX.MANF.SM.AR.ZS', 'value': 'Tariff rate, applied, simple mean, manufactured products (%)'}","{'id': 'CN', 'value': 'China'}",CHN,2015,7.83,,,1

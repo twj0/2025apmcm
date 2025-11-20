@@ -1,0 +1,33 @@
+Download Date,"August 7, 2025, 11:00 AM"
+Step 1: Trade Flow and Classification System,
+Trade Flow,General Imports
+Classification System,HTS Items
+Step 2: Data and Years,
+Data To Report,General Import Charges
+Data Format,1
+Select Type,Full Years
+Years,"2020, 2021, 2022, 2023, 2024, 2025"
+Timeframe Aggregation,Annual
+Step 3: Countries,
+Select Type,Use All Countries
+Country List,
+Country Aggregation,Break Out Countries
+Step 4: Commodities,
+Select Type,Use All Commodities
+Commodity List,
+Commodity Aggregation Level,2
+Commodity Aggregation,Break Out Commodities
+Description Display,YES
+Step 5: Programs,
+Select Type,Use All Programs
+Import Program Aggregation,Aggregate CSC
+Step 6: Rate Provision Codes,
+Select Type,Use All Provision Codes
+Provision Code Aggregation,Aggregate RPCODE
+Step 7: Districts,
+Select Type,Use All Districts
+District List,
+District Aggregation,Aggregate District
+Step 8: Report Layout,
+Column Order,"HTS2 & DESCRIPTION, COUNTRY"
+Column Sort Order,HTS2 & DESCRIPTION
