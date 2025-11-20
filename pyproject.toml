@@ -55,4 +55,5 @@ dependencies = [
   "sympy",
   "jinja2",
   "pywin32>=311",
+  "pyarrow>=22.0.0",
 ]

@@ -24,6 +24,15 @@ from .mapping import (
     SEMICONDUCTORS_HS,
 )
 
+from .external_data import (
+    ensure_q1_external_data,
+    ensure_q2_external_data,
+    ensure_q3_external_data,
+    ensure_q4_external_data,
+    ensure_q5_external_data,
+    ensure_all_external_data,
+)
+
 __all__ = [
     # Config
     'PROJECT_ROOT',
@@ -46,4 +55,11 @@ __all__ = [
     'SOYBEANS_HS',
     'AUTOS_HS',
     'SEMICONDUCTORS_HS',
+    # External data helpers
+    'ensure_q1_external_data',
+    'ensure_q2_external_data',
+    'ensure_q3_external_data',
+    'ensure_q4_external_data',
+    'ensure_q5_external_data',
+    'ensure_all_external_data',
 ]

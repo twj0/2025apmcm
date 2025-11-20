@@ -24,6 +24,8 @@ from models import (
 )
 from utils.config import ensure_directories, set_random_seed
 from utils.mapping import save_mapping_tables
+from utils.data_loader import TariffDataLoader
+from utils.external_data import ensure_all_external_data
 
 
 # Configure logging
@@ -55,6 +57,24 @@ def setup_environment():
         logger.info("Mapping tables created")
     except Exception as e:
         logger.warning(f"Could not create mapping tables: {e}")
+
+    # Ensure external CSV/JSON parameter files exist with structured sample data
+    # so that each question can run even before empirical data are available.
+    try:
+        ensure_all_external_data()
+        logger.info("External data/parameter files verified or created under 2025/data/external/")
+    except Exception as e:
+        logger.warning(f"Could not ensure external data files: {e}")
+
+    # Validate Tariff Data directory before proceeding so downstream modules
+    # can rely on official USITC exports instead of placeholder content.
+    loader = TariffDataLoader()
+    validation = loader.validate_data_sources()
+    if not validation.get('healthy', False):
+        raise RuntimeError(
+            "Tariff Data validation failed. Please review the logs, ensure "
+            "2025/problems/Tariff Data contains the official CSV exports, and rerun."
+        )
 
 
 def run_all_analyses():

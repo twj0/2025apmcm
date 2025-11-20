@@ -10,15 +10,22 @@ wheels/
 .venv
 
 # project specific files
+.trae
 spec
 *.pdf
 prompt
-*.csv
+
 *.log
-*.md
+.iflow
 *.txt
 *.json
 *.xlsx
 project_document
-
+problems/
 2025tmpl
+QUICK_START.md
+PROJECT_COMPLETION_SUMMARY.md
+AGENT_PROMPTS_ANALYSIS.md
+COLLABORATION_GUIDE.md
+2025/USAGE_GUIDE.md
+2025/CODE_SUMMARY.md

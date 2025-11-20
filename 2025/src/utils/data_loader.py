@@ -29,6 +29,159 @@ class TariffDataLoader:
         self.tariff_data_dir = Path(tariff_data_dir)
         self.import_file = self.tariff_data_dir / "DataWeb-Query-Import__General_Import_Charges.csv"
         self.export_file = self.tariff_data_dir / "DataWeb-Query-Export__FAS_Value.csv"
+
+    @staticmethod
+    def _standardize_hs_codes(series: pd.Series) -> pd.Series:
+        """Normalize HS codes to digit-only strings while preserving length."""
+        hs_series = series.astype("string").str.strip()
+        hs_series = hs_series.str.replace(r"\.0+$", "", regex=True)
+        hs_series = hs_series.str.replace(r"[^0-9]", "", regex=True)
+        hs_series = hs_series.replace("", pd.NA)
+        return hs_series
+
+    # ------------------------------------------------------------------
+    # Validation utilities
+    # ------------------------------------------------------------------
+
+    def validate_data_sources(self, min_year_columns: int = 3) -> Dict[str, bool]:
+        """Validate that required Tariff Data CSVs exist and look non-template.
+
+        Args:
+            min_year_columns: Minimum number of year columns expected in
+                the wide-format import/export CSVs.
+
+        Returns:
+            Dict summarizing validation results with a "healthy" flag.
+        """
+
+        logger.info("Validating Tariff Data sources under %s", self.tariff_data_dir)
+
+        results = {
+            'imports_csv': self._validate_main_tariff_csv(
+                self.import_file,
+                label='imports',
+                skiprows=2,
+                min_year_columns=min_year_columns,
+            ),
+            'exports_csv': self._validate_main_tariff_csv(
+                self.export_file,
+                label='exports',
+                skiprows=2,
+                min_year_columns=min_year_columns,
+            ),
+            'tariff_schedules': self._validate_tariff_schedule_dirs(),
+        }
+
+        results['healthy'] = all(results.values())
+
+        if results['healthy']:
+            logger.info("Tariff Data sources validation completed successfully.")
+        else:
+            logger.warning(
+                "Tariff Data validation detected potential issues. "
+                "Please review the warnings above before running analyses."
+            )
+
+        return results
+
+    def _validate_main_tariff_csv(
+        self,
+        file_path: Path,
+        label: str,
+        skiprows: int,
+        min_year_columns: int,
+    ) -> bool:
+        """Validate the main wide-format import/export CSVs."""
+
+        if not file_path.exists():
+            logger.error("%s CSV not found at %s", label.capitalize(), file_path)
+            return False
+
+        try:
+            sample = pd.read_csv(file_path, skiprows=skiprows, nrows=5)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.error("Could not read %s CSV %s: %s", label, file_path, exc)
+            return False
+
+        normalized_cols = {
+            str(col).lower().strip().replace(' ', '_'): str(col)
+            for col in sample.columns
+        }
+
+        required = {'hts_number', 'country'}
+        missing = [col for col in required if col not in normalized_cols]
+        if missing:
+            logger.warning(
+                "File %s appears to be missing required columns: %s",
+                file_path,
+                missing,
+            )
+
+        year_cols: List[str] = []
+        for col in sample.columns:
+            col_str = str(col).strip()
+            if col_str.isdigit():
+                year_cols.append(col)
+
+        if len(year_cols) < min_year_columns:
+            logger.warning(
+                "%s CSV %s contains only %d year columns (expected >= %d)",
+                label.capitalize(),
+                file_path,
+                len(year_cols),
+                min_year_columns,
+            )
+
+        has_non_zero_data = True
+        if year_cols:
+            numeric_sample = sample[year_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
+            if float(numeric_sample.abs().sum().sum()) == 0.0:
+                logger.warning(
+                    "Sample rows from %s look all-zero. If this is placeholder data, "
+                    "please replace it with the official Tariff Data export.",
+                    file_path,
+                )
+                has_non_zero_data = False
+
+        return not missing and has_non_zero_data and len(year_cols) >= min_year_columns
+
+    def _validate_tariff_schedule_dirs(self) -> bool:
+        """Ensure at least one annual tariff schedule CSV can be read."""
+
+        schedule_dirs = sorted(self.tariff_data_dir.glob("tariff_data_*"))
+        if not schedule_dirs:
+            logger.warning(
+                "No tariff_data_*/ subdirectories found under %s. "
+                "Annual tariff schedules are required for downstream analysis.",
+                self.tariff_data_dir,
+            )
+            return False
+
+        any_valid_file = False
+        for directory in schedule_dirs:
+            csv_files = sorted(directory.glob("*.csv"))
+            if not csv_files:
+                logger.warning("No CSV files found inside %s", directory)
+                continue
+
+            sample_file = csv_files[0]
+            try:
+                pd.read_csv(sample_file, nrows=1)
+            except Exception as exc:  # pragma: no cover - defensive
+                logger.warning("Unable to read %s: %s", sample_file, exc)
+                continue
+
+            any_valid_file = True
+            break
+
+        if not any_valid_file:
+            logger.warning(
+                "Unable to read any tariff schedule CSVs under %s."
+                " Please verify the Tariff Data archive.",
+                self.tariff_data_dir,
+            )
+
+        return any_valid_file
         
     def load_imports(self) -> pd.DataFrame:
         """Load U.S. import data with duty collected.
@@ -40,7 +193,11 @@ class TariffDataLoader:
         
         try:
             # Read CSV, skip the metadata rows
-            df = pd.read_csv(self.import_file, skiprows=2)
+            df = pd.read_csv(
+                self.import_file,
+                skiprows=2,
+                dtype={"HTS Number": "string"}
+            )
             
             # Standardize column names
             df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
@@ -71,7 +228,7 @@ class TariffDataLoader:
             
             # Ensure HS code is string with leading zeros preserved
             if 'hs_code' in df.columns:
-                df['hs_code'] = df['hs_code'].astype(str).str.zfill(2)
+                df['hs_code'] = self._standardize_hs_codes(df['hs_code'])
             
             logger.info(f"Loaded {len(df)} import records")
             logger.info(f"Columns: {df.columns.tolist()}")
@@ -93,7 +250,11 @@ class TariffDataLoader:
         
         try:
             # Read CSV, skip the metadata rows
-            df = pd.read_csv(self.export_file, skiprows=2)
+            df = pd.read_csv(
+                self.export_file,
+                skiprows=2,
+                dtype={"HTS Number": "string"}
+            )
             
             # Standardize column names
             df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
@@ -122,9 +283,9 @@ class TariffDataLoader:
             # Convert export_value to numeric
             df['export_value'] = pd.to_numeric(df['export_value'], errors='coerce')
             
-            # Ensure HS code is string
+            # Ensure HS code is string with leading zeros preserved
             if 'hs_code' in df.columns:
-                df['hs_code'] = df['hs_code'].astype(str).str.zfill(2)
+                df['hs_code'] = self._standardize_hs_codes(df['hs_code'])
             
             logger.info(f"Loaded {len(df)} export records")
             logger.info(f"Columns: {df.columns.tolist()}")

@@ -315,13 +315,14 @@ class MacroFinanceModel:
             formula = 'manufacturing_va_share ~ post_treatment + year'
             model = smf.ols(formula, data=ts_df).fit()
             
+            p_value = float(model.pvalues.get('post_treatment', 1))
             results = {
                 'pre_treatment_mean': float(pre_mean),
                 'post_treatment_mean': float(post_mean),
                 'difference': float(difference),
                 'treatment_coef': float(model.params.get('post_treatment', 0)),
-                'treatment_pvalue': float(model.pvalues.get('post_treatment', 1)),
-                'statistically_significant': model.pvalues.get('post_treatment', 1) < 0.05,
+                'treatment_pvalue': p_value,
+                'statistically_significant': bool(p_value < 0.05),
             }
             
             logger.info(f"Reshoring effect: {results['difference']:.2f} percentage points")

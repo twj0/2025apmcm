@@ -16,17 +16,29 @@ logger = logging.getLogger(__name__)
 
 # === HS Code Mapping Constants ===
 
-# Soybeans HS codes
+# Soybeans HS codes (include chapter- and heading-level prefixes)
 SOYBEANS_HS = [
-    '1201',  # Soybeans, whether or not broken
-    '120100',
+    '12',        # Oil seeds and oleaginous fruits
+    '1201',      # Soybeans, whether or not broken
+    '120110',
+    '120190',
     '12019000',
-    '12011000',
+    '120100',
+    '120199',
+    '2304',      # Soybean oilcake and solid residues
+    '230400',
+    '230410',
+    '1507',      # Soybean oil and its fractions
+    '150710',
+    '150790',
 ]
 
 # Automobiles HS codes (Chapter 87)
 AUTOS_HS = [
-    '8703',  # Motor cars and other motor vehicles for transport of persons
+    '87',        # Vehicles (overall chapter)
+    '8701',      # Tractors
+    '8702',
+    '8703',      # Motor cars for transport of persons
     '870310',
     '870321',
     '870322',
@@ -35,6 +47,19 @@ AUTOS_HS = [
     '870331',
     '870332',
     '870333',
+    '870340',
+    '870350',
+    '870360',
+    '870370',
+    '8704',      # Trucks
+    '870421',
+    '870422',
+    '870423',
+    '870431',
+    '870432',
+    '8706',
+    '8707',
+    '8708',
 ]
 
 # Semiconductors HS codes (Chapter 85.41, 85.42)
@@ -44,16 +69,29 @@ SEMICONDUCTORS_HS = {
         '854141',
         '854142',
         '854143',
+        '854150',
+        '854160',
     ],
     'mid': [
         '854231',  # Processors and controllers
         '854232',
         '854233',
+        '854239',
+        '854240',
+        '854250',
     ],
     'low': [
         '854290',  # Other electronic integrated circuits
         '854110',
         '854121',
+        '854129',
+        '854190',
+        '854260',
+    ],
+    'general': [
+        '8541',
+        '8542',
+        '85',
     ],
 }
 
@@ -78,9 +116,19 @@ class HSMapper:
     
     def __init__(self):
         """Initialize the mapper with predefined mappings."""
-        self.soybeans_hs = SOYBEANS_HS
-        self.autos_hs = AUTOS_HS
-        self.semiconductors_hs = SEMICONDUCTORS_HS
+        self.soybeans_hs = sorted(SOYBEANS_HS, key=len, reverse=True)
+        self.autos_hs = sorted(AUTOS_HS, key=len, reverse=True)
+        self.semiconductors_hs = {
+            segment: sorted(codes, key=len, reverse=True)
+            for segment, codes in SEMICONDUCTORS_HS.items()
+        }
+
+    @staticmethod
+    def _match_prefix(hs_code: str, prefixes: List[str]) -> bool:
+        hs_str = str(hs_code).strip()
+        if not hs_str:
+            return False
+        return any(hs_str.startswith(prefix) for prefix in prefixes)
         
     def is_soybean(self, hs_code: str) -> bool:
         """Check if HS code is for soybeans.
@@ -91,11 +139,7 @@ class HSMapper:
         Returns:
             True if hs_code matches soybeans
         """
-        hs_str = str(hs_code).strip()
-        for soy_code in self.soybeans_hs:
-            if hs_str.startswith(soy_code):
-                return True
-        return False
+        return self._match_prefix(hs_code, self.soybeans_hs)
     
     def is_auto(self, hs_code: str) -> bool:
         """Check if HS code is for automobiles.
@@ -106,11 +150,7 @@ class HSMapper:
         Returns:
             True if hs_code matches automobiles
         """
-        hs_str = str(hs_code).strip()
-        for auto_code in self.autos_hs:
-            if hs_str.startswith(auto_code):
-                return True
-        return False
+        return self._match_prefix(hs_code, self.autos_hs)
     
     def get_semiconductor_segment(self, hs_code: str) -> Optional[str]:
         """Get semiconductor segment for HS code.
@@ -122,6 +162,8 @@ class HSMapper:
             Segment name ('high', 'mid', 'low') or None
         """
         hs_str = str(hs_code).strip()
+        if not hs_str:
+            return None
         
         for segment, codes in self.semiconductors_hs.items():
             for code in codes:
