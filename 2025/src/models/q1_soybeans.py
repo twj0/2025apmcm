@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import math
 
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, RobustScaler
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from statsmodels.regression.linear_model import RegressionResultsWrapper
@@ -505,8 +505,16 @@ class LSTMConfig:
     batch_size: int = 32
     epochs: int = 80
     validation_split: float = 0.2
-    lower_quantile: float = 0.01
-    upper_quantile: float = 0.99
+    lower_quantile: float = 0.05
+    upper_quantile: float = 0.95
+    smoothing_alpha: float = 0.3
+    # Robust feature scaling
+    robust_q_low: float = 5.0
+    robust_q_high: float = 95.0
+    # Micro-transaction thresholds and feature clipping
+    min_quantity_threshold: float = 1e3  # tonnes
+    min_unit_price_threshold: float = 50.0  # USD/ton
+    pct_clip_abs: float = 0.5
 
 
 class SoybeanDataProcessor:
@@ -521,9 +529,23 @@ class SoybeanDataProcessor:
         self.target_quantiles: Dict[str, Tuple[float, float]] = {}
         self.target_quantiles_by_exporter: Dict[str, Dict[str, Tuple[float, float]]] = {}
         self.growth_quantiles_by_exporter: Dict[str, Tuple[float, float]] = {}
+        self.target_quantiles_by_exporter_month: Dict[Tuple[str, int], Dict[str, Tuple[float, float]]] = {}
+        self.growth_quantiles_by_exporter_month: Dict[Tuple[str, int], Tuple[float, float]] = {}
 
     def prepare_features(self, df: pd.DataFrame) -> pd.DataFrame:
         features = df.copy()
+        # Micro-transaction thresholds: set tiny quantities/prices to NaN for robust downstream stats
+        try:
+            if 'import_quantity' in features.columns:
+                qthr = getattr(self.config, 'min_quantity_threshold', 0.0)
+                if qthr and qthr > 0:
+                    features.loc[features['import_quantity'] < qthr, 'import_quantity'] = np.nan
+            if 'unit_price' in features.columns:
+                pthr = getattr(self.config, 'min_unit_price_threshold', 0.0)
+                if pthr and pthr > 0:
+                    features.loc[features['unit_price'] < pthr, 'unit_price'] = np.nan
+        except Exception as exc:
+            logger.warning("Threshold filtering failed: %s", exc)
         features['month_sin'] = np.sin(2 * np.pi * features['month'] / 12)
         features['month_cos'] = np.cos(2 * np.pi * features['month'] / 12)
         year_min, year_max = features['year'].min(), features['year'].max()
@@ -544,6 +566,14 @@ class SoybeanDataProcessor:
         features['tariff_impact'] = features['tariff_rate'] * features['unit_price']
         features['effective_price'] = features['unit_price'] * (1 + features['tariff_rate'])
         features['volume_growth'] = features.groupby('exporter')['import_quantity'].pct_change()
+        # Clip unstable pct-change derived features
+        try:
+            clip_abs = float(getattr(self.config, 'pct_clip_abs', 0.5))
+            for col in ['volume_growth', 'price_elasticity']:
+                if col in features.columns:
+                    features[col] = features[col].clip(-clip_abs, clip_abs)
+        except Exception as exc:
+            logger.warning("Feature clipping failed: %s", exc)
 
         features = features.replace([np.inf, -np.inf], np.nan)
         features = features.sort_values(['exporter', 'date']).reset_index(drop=True)
@@ -565,7 +595,8 @@ class SoybeanDataProcessor:
         return features
 
     def build_supervised_arrays(self, features: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray, List[Dict]]:
-        feature_scaler = MinMaxScaler()
+        # Robust scaling for features
+        feature_scaler = RobustScaler(quantile_range=(self.config.robust_q_low, self.config.robust_q_high))
         target_scaler = MinMaxScaler()
 
         scaled_features = feature_scaler.fit_transform(features[self.feature_columns])
@@ -607,11 +638,34 @@ class SoybeanDataProcessor:
                     self.growth_quantiles_by_exporter[exporter] = (g_low, g_high)
                 else:
                     self.growth_quantiles_by_exporter[exporter] = (-0.8, 0.8)
+            # Exporter x Month seasonal quantiles
+            self.target_quantiles_by_exporter_month = {}
+            self.growth_quantiles_by_exporter_month = {}
+            if 'month' in features.columns:
+                for (exporter, month), grp_em in features.groupby(['exporter', 'month']):
+                    ql_em = grp_em[self.target_columns].quantile(self.config.lower_quantile)
+                    qh_em = grp_em[self.target_columns].quantile(self.config.upper_quantile)
+                    self.target_quantiles_by_exporter_month[(exporter, int(month))] = {
+                        col: (float(max(1e-6, ql_em[col])), float(max(ql_em[col] + 1e-6, qh_em[col])))
+                        for col in self.target_columns
+                    }
+                    if 'volume_growth' in grp_em.columns:
+                        g_low_em = float(grp_em['volume_growth'].quantile(self.config.lower_quantile))
+                        g_high_em = float(grp_em['volume_growth'].quantile(self.config.upper_quantile))
+                        if not np.isfinite(g_low_em):
+                            g_low_em = -1.0
+                        if not np.isfinite(g_high_em):
+                            g_high_em = 1.0
+                        if g_high_em <= g_low_em:
+                            g_high_em = g_low_em + 1e-3
+                        self.growth_quantiles_by_exporter_month[(exporter, int(month))] = (g_low_em, g_high_em)
         except Exception as exc:
             logger.warning("Failed to compute target quantiles: %s", exc)
             self.target_quantiles = {col: (1e-6, float('inf')) for col in self.target_columns}
             self.target_quantiles_by_exporter = {}
             self.growth_quantiles_by_exporter = {}
+            self.target_quantiles_by_exporter_month = {}
+            self.growth_quantiles_by_exporter_month = {}
 
         sequences: List[np.ndarray] = []
         labels: List[np.ndarray] = []
@@ -809,32 +863,52 @@ class SoybeanLSTMPipeline:
             pred_scaled = pred_scaled.reshape(self.config.forecast_horizon, len(self.processor.target_columns))
             pred_log = self.processor.scalers['targets'].inverse_transform(pred_scaled)
             pred_actual = np.exp(pred_log)
-            # Quantile clamping for stability
+            # Initial global clamping (broad safety bounds)
             for j, col in enumerate(self.processor.target_columns):
-                low, high = self.processor.target_quantiles.get(col, (1e-6, float('inf')))
-                pred_actual[:, j] = np.clip(pred_actual[:, j], low, high)
-            # Exporter-level clamping
+                low_g, high_g = self.processor.target_quantiles.get(col, (1e-6, float('inf')))
+                pred_actual[:, j] = np.clip(pred_actual[:, j], low_g, high_g)
+
+            # Exporter-level clamping baseline
             tqe = self.processor.target_quantiles_by_exporter.get(exporter, {})
             for j, col in enumerate(self.processor.target_columns):
                 if col in tqe:
                     low_e, high_e = tqe[col]
                     pred_actual[:, j] = np.clip(pred_actual[:, j], low_e, high_e)
-            # Month-over-month growth clamping (quantity)
+
+            # Prepare future dates and apply seasonal (exporter×month) clamps per step
+            last_date = exporter_raw['date'].max()
+            future_dates = pd.date_range(last_date + pd.offsets.MonthBegin(1), periods=self.config.forecast_horizon, freq='MS')
+
+            # Month-over-month growth clamping (quantity) with seasonal bounds
             qty_idx = self.processor.target_columns.index('import_quantity')
             prev_qty = float(exporter_raw['import_quantity'].iloc[-1])
-            g_low, g_high = self.processor.growth_quantiles_by_exporter.get(exporter, (-0.8, 0.8))
             adjusted_qty = []
             for i in range(pred_actual.shape[0]):
+                # Seasonal target clamps (per step)
+                month_i = int(future_dates[i].month)
+                tqem = self.processor.target_quantiles_by_exporter_month.get((exporter, month_i), {})
+                for j, col in enumerate(self.processor.target_columns):
+                    if col in tqem:
+                        low_em, high_em = tqem[col]
+                        pred_actual[i, j] = float(np.clip(pred_actual[i, j], low_em, high_em))
+
+                # Seasonal growth bounds if available; fall back to exporter-level
+                g_bounds = self.processor.growth_quantiles_by_exporter_month.get((exporter, month_i))
+                if g_bounds is None:
+                    g_bounds = self.processor.growth_quantiles_by_exporter.get(exporter, (-0.8, 0.8))
+                g_low, g_high = g_bounds
+
                 q_pred = float(pred_actual[i, qty_idx])
                 growth = (q_pred - prev_qty) / (prev_qty + 1e-6)
                 growth = float(np.clip(growth, g_low, g_high))
                 q_adj = max(prev_qty * (1.0 + growth), 1e-6)
-                adjusted_qty.append(q_adj)
-                prev_qty = q_adj
-            pred_actual[:, qty_idx] = np.array(adjusted_qty, dtype=float)
+                alpha = getattr(self.config, 'smoothing_alpha', 0.3)
+                q_smooth = prev_qty + alpha * (q_adj - prev_qty)
+                q_smooth = max(q_smooth, 1e-6)
+                adjusted_qty.append(q_smooth)
+                prev_qty = q_smooth
 
-            last_date = exporter_raw['date'].max()
-            future_dates = pd.date_range(last_date + pd.offsets.MonthBegin(1), periods=self.config.forecast_horizon, freq='MS')
+            pred_actual[:, qty_idx] = np.array(adjusted_qty, dtype=float)
 
             pred_df = pd.DataFrame(pred_actual, columns=self.processor.target_columns)
             pred_df['date'] = future_dates
