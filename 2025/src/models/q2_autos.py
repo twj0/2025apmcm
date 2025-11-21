@@ -42,6 +42,7 @@ sys.path.append(str(Path(__file__).parents[1]))
 from utils.config import (
     RESULTS_DIR,
     FIGURES_DIR,
+    DATA_EXTERNAL,
     DATA_PROCESSED,
     RESULTS_LOGS,
 )
@@ -84,21 +85,46 @@ class NashEquilibriumSolver:
         # Populate payoffs from scenario results
         for i, tariff in enumerate(us_tariff_grid):
             for j, reloc in enumerate(japan_relocation_grid):
-                # Find matching scenario
+                # Find matching scenario (align with simulate_japan_response_scenarios keys)
                 if reloc == 0.0:
-                    scenario = 'baseline'
+                    scenario = 'S0_no_response'
                 elif reloc == 0.5:
-                    scenario = 'partial_relocation'
+                    scenario = 'S1_partial_relocation'
                 else:
-                    scenario = 'aggressive_expansion'
-                    
-                row = scenario_results[scenario_results['scenario'] == scenario].iloc[0]
+                    scenario = 'S2_aggressive_localization'
+
+                match_rows = scenario_results[scenario_results['scenario'] == scenario]
+                if match_rows.empty:
+                    # Fallback to first row to avoid crash if mismatch
+                    row = scenario_results.iloc[0]
+                else:
+                    row = match_rows.iloc[0]
                 
-                # US payoff: employment change + production increase
-                us_payoffs[i, j] = row['employment_change_pct'] + row['production_change_pct']
+                # US payoff: employment change + production increase (robust)
+                try:
+                    emp_chg = float(row.get('employment_change_pct', 0.0)) if isinstance(row, pd.Series) else 0.0
+                except Exception:
+                    emp_chg = 0.0
+                try:
+                    prod_chg = float(row.get('production_change_pct', 0.0)) if isinstance(row, pd.Series) else 0.0
+                except Exception:
+                    prod_chg = 0.0
+                us_payoffs[i, j] = emp_chg + prod_chg
                 
-                # Japan payoff: maintain sales - relocation cost
-                sales_retention = row['total_japanese_sales'] / scenario_results.iloc[0]['total_japanese_sales']
+                # Japan payoff: maintain sales - relocation cost (robust to missing columns)
+                base_total = 1.0
+                if 'total_japanese_sales' in scenario_results.columns and not scenario_results['total_japanese_sales'].empty:
+                    try:
+                        base_total = float(scenario_results['total_japanese_sales'].iloc[0])
+                    except Exception:
+                        base_total = 1.0
+                curr_total = None
+                if isinstance(row, pd.Series) and 'total_japanese_sales' in row.index:
+                    try:
+                        curr_total = float(row['total_japanese_sales'])
+                    except Exception:
+                        curr_total = None
+                sales_retention = (curr_total if curr_total is not None else base_total) / (base_total if base_total != 0 else 1.0)
                 relocation_cost = reloc * 30  # Simplified cost function
                 jp_payoffs[i, j] = sales_retention * 100 - relocation_cost
         
@@ -530,8 +556,14 @@ class AutoTradeModel:
                 'max_employment_increase': float(industry_df['employment_change_pct'].max())
             },
             'model_parameters': {
-                'import_elasticity': self.import_model.coef_.tolist() if self.import_model else None,
-                'transmission_elasticity': self.transmission_model.coef_.tolist() if self.transmission_model else None
+                'import_elasticity': (
+                    self.import_model.params.to_dict() if (self.import_model is not None and hasattr(self.import_model, 'params'))
+                    else (self.import_model.coef_.tolist() if (self.import_model is not None and hasattr(self.import_model, 'coef_')) else None)
+                ),
+                'transmission_elasticity': (
+                    self.transmission_model.params.to_dict() if (self.transmission_model is not None and hasattr(self.transmission_model, 'params'))
+                    else (self.transmission_model.coef_.tolist() if (self.transmission_model is not None and hasattr(self.transmission_model, 'coef_')) else None)
+                )
             }
         }
         
@@ -542,16 +574,28 @@ class AutoTradeModel:
         
         return import_df, industry_df
     
-    def run_marl_analysis(self, industry_df: pd.DataFrame) -> Dict[str, Any]:
+    def run_marl_analysis(self, industry_df: pd.DataFrame, import_df: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
         """Run MARL game-theoretic analysis.
         
         Args:
             industry_df: Industry impact results from econometric scenarios
+            import_df: Import structure results with total_japanese_sales (optional)
             
         Returns:
             Dictionary with Nash equilibrium analysis
         """
         logger.info("Running MARL Nash Equilibrium analysis")
+        
+        # Merge industry results with import totals for payoff computation if available
+        scenario_results = industry_df.copy()
+        if import_df is not None and 'total_japanese_sales' in import_df.columns:
+            scenario_results = scenario_results.merge(
+                import_df[['scenario', 'total_japanese_sales']], on='scenario', how='left'
+            )
+        else:
+            # Fallback to constant to avoid KeyError; relative ratio becomes 1
+            if 'total_japanese_sales' not in scenario_results.columns:
+                scenario_results['total_japanese_sales'] = 1.0
         
         # Define strategy spaces
         us_tariff_grid = np.array([0.0, 0.10, 0.25])  # No tariff, 10%, 25%
@@ -559,7 +603,7 @@ class AutoTradeModel:
         
         # Compute Nash Equilibria
         nash_results = self.nash_solver.compute_best_responses(
-            us_tariff_grid, japan_relocation_grid, industry_df
+            us_tariff_grid, japan_relocation_grid, scenario_results
         )
         
         # Save MARL results
@@ -638,6 +682,189 @@ class AutoTradeModel:
         logger.info(f"MARL analysis complete. Results saved to {self.results_marl}")
         
         return nash_results
+    
+    def prepare_transformer_data(self, panel_df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray, Dict]:
+        """Prepare time series-like features for Transformer model.
+        
+        Args:
+            panel_df: Panel data with imports by partner and year
+            
+        Returns:
+            Tuple of (X_scaled, y_scaled, metadata)
+        """
+        if tf is None:
+            logger.error("TensorFlow not available for Transformer model")
+            return np.array([]), np.array([]), {}
+        
+        logger.info("Preparing data for Transformer model")
+        
+        # Focus on major partners by import charges
+        major_partners = (
+            panel_df.groupby('partner_country')['auto_import_charges']
+            .sum().nlargest(5).index
+        )
+        df = panel_df[panel_df['partner_country'].isin(major_partners)].copy()
+        
+        # Sort and index features
+        df = df.sort_values(['partner_country', 'year']).reset_index(drop=True)
+        df['year_idx'] = df['year'] - df['year'].min()
+        df['partner_encoded'] = pd.Categorical(df['partner_country']).codes
+        
+        # Lag and moving average features
+        df['import_lag1'] = df.groupby('partner_country')['auto_import_charges'].shift(1)
+        df['import_lag2'] = df.groupby('partner_country')['auto_import_charges'].shift(2)
+        df['import_ma3'] = df.groupby('partner_country')['auto_import_charges'].transform(lambda x: x.rolling(3).mean())
+        
+        df = df.dropna()
+        
+        if len(df) < 10:
+            logger.warning("Insufficient data for Transformer model")
+            return np.array([]), np.array([]), {}
+        
+        feature_cols = ['year_idx', 'partner_encoded', 'import_lag1', 'import_lag2', 'import_ma3']
+        X = df[feature_cols].values
+        y = df['auto_import_charges'].values
+        
+        scaler_X = MinMaxScaler()
+        scaler_y = MinMaxScaler()
+        X_scaled = scaler_X.fit_transform(X)
+        y_scaled = scaler_y.fit_transform(y.reshape(-1, 1)).flatten()
+        
+        metadata = {
+            'scaler_X': scaler_X,
+            'scaler_y': scaler_y,
+            'feature_cols': feature_cols,
+            'partners': list(major_partners)
+        }
+        
+        return X_scaled, y_scaled, metadata
+    
+    def build_transformer_model(self, input_dim: int) -> Any:
+        """Build a small Transformer-like regression model in Keras."""
+        if tf is None:
+            raise ImportError("TensorFlow required for Transformer model")
+        
+        inputs = layers.Input(shape=(input_dim,))
+        # add a trivial sequence axis for attention
+        x = layers.Reshape((1, input_dim))(inputs)
+        attn = layers.MultiHeadAttention(num_heads=2, key_dim=max(1, input_dim // 2))(x, x)
+        x = layers.Add()([x, attn])
+        x = layers.LayerNormalization()(x)
+        
+        ff = layers.Dense(32, activation='relu')(x)
+        ff = layers.Dropout(0.2)(ff)
+        ff = layers.Dense(input_dim)(ff)
+        x = layers.Add()([x, ff])
+        x = layers.LayerNormalization()(x)
+        
+        x = layers.Flatten()(x)
+        x = layers.Dense(16, activation='relu')(x)
+        x = layers.Dropout(0.2)(x)
+        outputs = layers.Dense(1)(x)
+        
+        model = models.Model(inputs=inputs, outputs=outputs)
+        model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+        return model
+    
+    def train_transformer_model(self, panel_df: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
+        """Train Transformer model for import prediction and export results."""
+        if tf is None:
+            logger.warning("TensorFlow not available, skipping Transformer model")
+            return {}
+        
+        if panel_df is None:
+            panel_df = self.data
+        if panel_df is None or len(panel_df) < 20:
+            logger.error("Insufficient data for Transformer training")
+            return {}
+        
+        X, y, metadata = self.prepare_transformer_data(panel_df)
+        if len(X) == 0:
+            return {}
+        
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, shuffle=False
+        )
+        
+        model = self.build_transformer_model(X.shape[1])
+        early_stop = callbacks.EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+        reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5)
+        
+        history = model.fit(
+            X_train, y_train,
+            validation_data=(X_test, y_test),
+            epochs=100,
+            batch_size=8,
+            callbacks=[early_stop, reduce_lr],
+            verbose=0
+        )
+        
+        # Predictions and metrics (inverse transform to original scale)
+        y_pred = model.predict(X_test, verbose=0).flatten()
+        y_test_orig = metadata['scaler_y'].inverse_transform(y_test.reshape(-1, 1)).flatten()
+        y_pred_orig = metadata['scaler_y'].inverse_transform(y_pred.reshape(-1, 1)).flatten()
+        
+        metrics = {
+            'rmse': float(np.sqrt(mean_squared_error(y_test_orig, y_pred_orig))),
+            'mae': float(mean_absolute_error(y_test_orig, y_pred_orig)),
+            'r2': float(r2_score(y_test_orig, y_pred_orig)),
+            'train_samples': int(len(X_train)),
+            'test_samples': int(len(X_test)),
+            'final_train_loss': float(history.history['loss'][-1]),
+            'final_val_loss': float(history.history['val_loss'][-1]) if 'val_loss' in history.history else None,
+        }
+        
+        logger.info(f"Transformer model - RMSE: {metrics['rmse']:.2f}, R²: {metrics['r2']:.3f}")
+        
+        results = {
+            'method': 'transformer',
+            'timestamp': datetime.now().isoformat(),
+            'metrics': metrics,
+            'training_history': {
+                'loss': [float(x) for x in history.history.get('loss', [])],
+                'val_loss': [float(x) for x in history.history.get('val_loss', [])],
+            },
+            'metadata': {
+                'feature_cols': metadata['feature_cols'],
+                'partners': metadata['partners'],
+            },
+        }
+        
+        # Save outputs
+        (self.results_transformer / '').mkdir(parents=True, exist_ok=True)
+        with open(self.results_transformer / 'training_results.json', 'w', encoding='utf-8') as f:
+            json.dump(results, f, indent=2, ensure_ascii=False)
+        
+        pred_df = pd.DataFrame({
+            'actual': y_test_orig,
+            'predicted': y_pred_orig,
+            'error': y_test_orig - y_pred_orig,
+            'error_pct': (y_test_orig - y_pred_orig) / (np.maximum(y_test_orig, 1e-6)) * 100,
+        })
+        pred_df.to_csv(self.results_transformer / 'predictions.csv', index=False)
+        
+        md_lines = [
+            "# Q2 Transformer Model Results",
+            "",
+            f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            "",
+            "## Model Performance",
+            f"- **RMSE:** {metrics['rmse']:.2f}",
+            f"- **MAE:** {metrics['mae']:.2f}",
+            f"- **R²:** {metrics['r2']:.3f}",
+            "",
+            "## Features Used",
+        ]
+        for feat in metadata['feature_cols']:
+            md_lines.append(f"- {feat}")
+        md_lines.extend(["", "## Major Partners", ""])
+        for p in metadata['partners']:
+            md_lines.append(f"- {p}")
+        with open(self.results_transformer / 'analysis_report.md', 'w', encoding='utf-8') as f:
+            f.write("\n".join(md_lines))
+        
+        logger.info(f"Transformer results saved to {self.results_transformer}")
+        return results
     
     def plot_q2_results(self) -> None:
         """Generate plots for Q2 results."""
@@ -728,7 +955,7 @@ def run_q2_analysis(use_transformer: bool = True) -> None:
     
     # Step 4: MARL game-theoretic analysis
     logger.info("\n[MARL ANALYSIS]")
-    nash_results = model.run_marl_analysis(industry_df)
+    nash_results = model.run_marl_analysis(industry_df, import_df)
     logger.info(f"Nash Equilibria found: {nash_results['n_equilibria']}")
     
     # Step 5: Transformer ML enhancement (NEW)

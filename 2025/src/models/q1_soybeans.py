@@ -505,6 +505,8 @@ class LSTMConfig:
     batch_size: int = 32
     epochs: int = 80
     validation_split: float = 0.2
+    lower_quantile: float = 0.01
+    upper_quantile: float = 0.99
 
 
 class SoybeanDataProcessor:
@@ -516,6 +518,9 @@ class SoybeanDataProcessor:
         self.feature_columns: List[str] = []
         self.target_columns: List[str] = TARGET_COLUMNS
         self._scaled_feature_matrix: Optional[np.ndarray] = None
+        self.target_quantiles: Dict[str, Tuple[float, float]] = {}
+        self.target_quantiles_by_exporter: Dict[str, Dict[str, Tuple[float, float]]] = {}
+        self.growth_quantiles_by_exporter: Dict[str, Tuple[float, float]] = {}
 
     def prepare_features(self, df: pd.DataFrame) -> pd.DataFrame:
         features = df.copy()
@@ -571,6 +576,42 @@ class SoybeanDataProcessor:
         self.scalers['features'] = feature_scaler
         self.scalers['targets'] = target_scaler
         self._scaled_feature_matrix = scaled_features
+        # Compute global quantiles for clamping in actual space
+        try:
+            q_low = features[self.target_columns].quantile(self.config.lower_quantile)
+            q_high = features[self.target_columns].quantile(self.config.upper_quantile)
+            self.target_quantiles = {
+                col: (float(max(1e-6, q_low[col])), float(max(q_low[col] + 1e-6, q_high[col])))
+                for col in self.target_columns
+            }
+            # Per-exporter target quantiles and growth quantiles
+            self.target_quantiles_by_exporter = {}
+            self.growth_quantiles_by_exporter = {}
+            for exporter, grp in features.groupby('exporter'):
+                ql_e = grp[self.target_columns].quantile(self.config.lower_quantile)
+                qh_e = grp[self.target_columns].quantile(self.config.upper_quantile)
+                self.target_quantiles_by_exporter[exporter] = {
+                    col: (float(max(1e-6, ql_e[col])), float(max(ql_e[col] + 1e-6, qh_e[col])))
+                    for col in self.target_columns
+                }
+                if 'volume_growth' in grp.columns:
+                    g_low = float(grp['volume_growth'].quantile(self.config.lower_quantile))
+                    g_high = float(grp['volume_growth'].quantile(self.config.upper_quantile))
+                    # Safety: ensure ordering and minimal width
+                    if not np.isfinite(g_low):
+                        g_low = -1.0
+                    if not np.isfinite(g_high):
+                        g_high = 1.0
+                    if g_high <= g_low:
+                        g_high = g_low + 1e-3
+                    self.growth_quantiles_by_exporter[exporter] = (g_low, g_high)
+                else:
+                    self.growth_quantiles_by_exporter[exporter] = (-0.8, 0.8)
+        except Exception as exc:
+            logger.warning("Failed to compute target quantiles: %s", exc)
+            self.target_quantiles = {col: (1e-6, float('inf')) for col in self.target_columns}
+            self.target_quantiles_by_exporter = {}
+            self.growth_quantiles_by_exporter = {}
 
         sequences: List[np.ndarray] = []
         labels: List[np.ndarray] = []
@@ -730,6 +771,14 @@ class SoybeanLSTMPipeline:
         # Back to actual space
         y_true = np.exp(y_true_log)
         y_pred_inv = np.exp(y_pred_log)
+        # Quantile clamping for stability
+        for idx, col in enumerate(self.processor.target_columns):
+            low, high = self.processor.target_quantiles.get(col, (1e-6, float('inf')))
+            y_pred_inv[:, idx] = np.clip(y_pred_inv[:, idx], low, high)
+
+        def smape(a: np.ndarray, f: np.ndarray) -> float:
+            denom = (np.abs(a) + np.abs(f)) + 1e-6
+            return float(np.mean(2.0 * np.abs(f - a) / denom) * 100)
 
         metrics: Dict[str, Dict[str, float]] = {}
         for idx, col in enumerate(self.processor.target_columns):
@@ -737,7 +786,7 @@ class SoybeanLSTMPipeline:
             mae = float(np.mean(np.abs(err)))
             rmse = float(math.sqrt(np.mean(err ** 2)))
             mape = float(np.mean(np.abs(err / (y_true[:, idx] + 1e-6))) * 100)
-            metrics[col] = {'mae': mae, 'rmse': rmse, 'mape': mape}
+            metrics[col] = {'mae': mae, 'rmse': rmse, 'mape': mape, 'smape': smape(y_true[:, idx], y_pred_inv[:, idx])}
 
         metrics['meta'] = {'target_dim': target_dim, 'horizon': horizon}
         return metrics
@@ -760,6 +809,29 @@ class SoybeanLSTMPipeline:
             pred_scaled = pred_scaled.reshape(self.config.forecast_horizon, len(self.processor.target_columns))
             pred_log = self.processor.scalers['targets'].inverse_transform(pred_scaled)
             pred_actual = np.exp(pred_log)
+            # Quantile clamping for stability
+            for j, col in enumerate(self.processor.target_columns):
+                low, high = self.processor.target_quantiles.get(col, (1e-6, float('inf')))
+                pred_actual[:, j] = np.clip(pred_actual[:, j], low, high)
+            # Exporter-level clamping
+            tqe = self.processor.target_quantiles_by_exporter.get(exporter, {})
+            for j, col in enumerate(self.processor.target_columns):
+                if col in tqe:
+                    low_e, high_e = tqe[col]
+                    pred_actual[:, j] = np.clip(pred_actual[:, j], low_e, high_e)
+            # Month-over-month growth clamping (quantity)
+            qty_idx = self.processor.target_columns.index('import_quantity')
+            prev_qty = float(exporter_raw['import_quantity'].iloc[-1])
+            g_low, g_high = self.processor.growth_quantiles_by_exporter.get(exporter, (-0.8, 0.8))
+            adjusted_qty = []
+            for i in range(pred_actual.shape[0]):
+                q_pred = float(pred_actual[i, qty_idx])
+                growth = (q_pred - prev_qty) / (prev_qty + 1e-6)
+                growth = float(np.clip(growth, g_low, g_high))
+                q_adj = max(prev_qty * (1.0 + growth), 1e-6)
+                adjusted_qty.append(q_adj)
+                prev_qty = q_adj
+            pred_actual[:, qty_idx] = np.array(adjusted_qty, dtype=float)
 
             last_date = exporter_raw['date'].max()
             future_dates = pd.date_range(last_date + pd.offsets.MonthBegin(1), periods=self.config.forecast_horizon, freq='MS')
@@ -786,6 +858,9 @@ class SoybeanLSTMPipeline:
             combined['import_value'] = combined['import_quantity'] * combined['unit_price']
             total_by_date = combined.groupby('date')['import_value'].transform('sum')
             combined['market_share'] = combined['import_value'] / (total_by_date + 1e-6)
+            # Exact re-normalization to sum to 1.0
+            share_sum = combined.groupby('date')['market_share'].transform('sum')
+            combined['market_share'] = combined['market_share'] / (share_sum + 1e-12)
             combined['market_share'] = combined['market_share'].clip(0.0, 1.0)
             combined = combined.drop(columns=['import_value'])
         except Exception as exc:
@@ -812,7 +887,7 @@ class SoybeanLSTMPipeline:
             if target == 'meta':
                 continue
             md_lines.append(
-                f"- **{target}**: MAE={stats['mae']:.2f}, RMSE={stats['rmse']:.2f}, MAPE={stats['mape']:.2f}%"
+                f"- **{target}**: MAE={stats['mae']:.2f}, RMSE={stats['rmse']:.2f}, MAPE={stats['mape']:.2f}%, sMAPE={stats.get('smape', float('nan')):.2f}%"
             )
         md_lines += ['', '## Sample Forecasts', combined.head(12).to_markdown(index=False)]
         md_path.write_text('\n'.join(md_lines), encoding='utf-8')

@@ -15,7 +15,7 @@
   },
   "ml_models": {
     "VAR_LSTM": {
-      "rmse": 4.2124945747785007e-07,
+      "rmse": 2.9191309775276796e-07,
       "training_samples": 6
     },
     "Reshoring_ML": {
