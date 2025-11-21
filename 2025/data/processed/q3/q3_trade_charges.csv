@@ -1,0 +1,1369 @@
+year,partner_country,segment,chip_import_charges
+2020,Afghanistan,general,9805.0
+2020,Albania,general,5745.0
+2020,Algeria,general,1217.0
+2020,Andorra,general,5689.0
+2020,Angola,general,1445.0
+2020,Anguilla,general,4131.0
+2020,Antigua and Barbuda,general,13504.0
+2020,Argentina,general,365452.0
+2020,Armenia,general,2795.0
+2020,Aruba,general,168.0
+2020,Australia,general,4694974.0
+2020,Austria,general,13165833.0
+2020,Azerbaijan,general,1362.0
+2020,Bahamas,general,13931.0
+2020,Bahrain,general,10827.0
+2020,Bangladesh,general,15754.0
+2020,Barbados,general,64520.0
+2020,Belarus,general,32090.0
+2020,Belgium,general,8351683.0
+2020,Belize,general,17844.0
+2020,Benin,general,0.0
+2020,Bermuda,general,7289.0
+2020,Bhutan,general,65.0
+2020,Bolivia,general,4794.0
+2020,Bosnia and Herzegovina,general,85814.0
+2020,Botswana,general,829.0
+2020,Brazil,general,18061324.0
+2020,British Indian Ocean Territory,general,979.0
+2020,British Virgin Islands,general,5565.0
+2020,Brunei,general,1774.0
+2020,Bulgaria,general,2553406.0
+2020,Burkina Faso,general,75.0
+2020,Cabo Verde,general,40426.0
+2020,Cambodia,general,14304948.0
+2020,Cameroon,general,38651.0
+2020,Canada,general,58926126.0
+2020,Cayman Islands,general,30835.0
+2020,Central African Republic,general,0.0
+2020,Chad,general,651.0
+2020,Chile,general,162500.0
+2020,China,general,3284896655.0
+2020,Christmas Island,general,2280.0
+2020,Cocos (Keeling) Islands,general,2966.0
+2020,Colombia,general,4227493.0
+2020,Comoros,general,0.0
+2020,Cook Islands,general,1162.0
+2020,Costa Rica,general,4044401.0
+2020,Croatia,general,927099.0
+2020,Curaçao,general,16414.0
+2020,Cyprus,general,114542.0
+2020,Czechia (Czech Republic),general,27765118.0
+2020,Côte d`Ivoire,general,3640.0
+2020,Democratic Republic of the Congo,general,755.0
+2020,Denmark,general,12148382.0
+2020,Djibouti,general,2070.0
+2020,Dominica,general,1150.0
+2020,Dominican Republic,general,8436635.0
+2020,Ecuador,general,1959180.0
+2020,Egypt,general,115119.0
+2020,El Salvador,general,875995.0
+2020,Equatorial Guinea,general,0.0
+2020,Eritrea,general,120.0
+2020,Estonia,general,10183534.0
+2020,Eswatini (Swaziland),general,4149.0
+2020,Ethiopia,general,10200.0
+2020,Falkland Islands,general,200.0
+2020,Faroe Islands,general,8437.0
+2020,Fiji,general,8560.0
+2020,Finland,general,6986671.0
+2020,France,general,33006142.0
+2020,French Guiana,general,0.0
+2020,French Polynesia,general,1088.0
+2020,French Southern and Antarctic Lands,general,0.0
+2020,Gabon,general,1380.0
+2020,Gambia,general,4582.0
+2020,Gaza Strip,general,11918.0
+2020,Georgia,general,18466.0
+2020,Germany,general,174610186.0
+2020,Ghana,general,541.0
+2020,Gibraltar,general,75.0
+2020,Greece,general,3721456.0
+2020,Greenland,general,0.0
+2020,Grenada,general,720.0
+2020,Guadeloupe,general,25435.0
+2020,Guatemala,general,47489.0
+2020,Guinea,general,6045.0
+2020,Guinea-Bissau,general,585.0
+2020,Guyana,general,6197.0
+2020,Haiti,general,58921.0
+2020,Heard and McDonald Islands,general,1300.0
+2020,Honduras,general,16455962.0
+2020,Hong Kong,general,8370257.0
+2020,Hungary,general,29250163.0
+2020,Iceland,general,75801.0
+2020,India,general,104052693.0
+2020,Indonesia,general,42784700.0
+2020,Iraq,general,1281.0
+2020,Ireland,general,4878080.0
+2020,Israel,general,31982530.0
+2020,Italy,general,53417794.0
+2020,Jamaica,general,12834.0
+2020,Japan,general,272513546.0
+2020,Jordan,general,30291.0
+2020,Kazakhstan,general,3273.0
+2020,Kenya,general,13541.0
+2020,Kiribati,general,100.0
+2020,Kosovo,general,3865.0
+2020,Kuwait,general,576.0
+2020,Kyrgyzstan,general,1894.0
+2020,Laos,general,445920.0
+2020,Latvia,general,1404445.0
+2020,Lebanon,general,10089.0
+2020,Lesotho,general,20093.0
+2020,Liberia,general,707.0
+2020,Libya,general,23.0
+2020,Liechtenstein,general,583661.0
+2020,Lithuania,general,1117538.0
+2020,Luxembourg,general,527763.0
+2020,Macau,general,42125.0
+2020,Madagascar,general,336.0
+2020,Malawi,general,864.0
+2020,Malaysia,general,340999876.0
+2020,Maldives,general,1136.0
+2020,Mali,general,8510.0
+2020,Malta,general,1265095.0
+2020,Marshall Islands,general,3928.0
+2020,Martinique,general,900.0
+2020,Mauritania,general,907.0
+2020,Mauritius,general,9840.0
+2020,Mayotte,general,52.0
+2020,Mexico,general,210188295.0
+2020,Micronesia,general,567.0
+2020,Moldova,general,88501.0
+2020,Monaco,general,9133.0
+2020,Mongolia,general,4705.0
+2020,Montenegro,general,27317.0
+2020,Montserrat ,general,2370.0
+2020,Morocco,general,1977303.0
+2020,Mozambique,general,1901.0
+2020,Myanmar (Burma),general,1073070.0
+2020,Namibia,general,8857.0
+2020,Nauru,general,13423.0
+2020,Nepal,general,1651.0
+2020,Netherlands,general,23684419.0
+2020,New Caledonia,general,2877.0
+2020,New Zealand,general,3510010.0
+2020,Nicaragua,general,7984815.0
+2020,Niger,general,4956.0
+2020,Nigeria,general,7234.0
+2020,Niue,general,250.0
+2020,Norfolk Island,general,440.0
+2020,North Macedonia,general,1131913.0
+2020,Norway,general,2566484.0
+2020,Oman,general,35062.0
+2020,Pakistan,general,171933.0
+2020,Palau,general,2659.0
+2020,Panama,general,125460.0
+2020,Papua New Guinea,general,1941.0
+2020,Paraguay,general,193708.0
+2020,Peru,general,323499.0
+2020,Philippines,general,114701387.0
+2020,Pitcairn Islands,general,3515.0
+2020,Poland,general,25834779.0
+2020,Portugal,general,8043444.0
+2020,Qatar,general,12734.0
+2020,Republic of the Congo,general,2430.0
+2020,Reunion,general,3065.0
+2020,Romania,general,11866292.0
+2020,Russia,general,2286157.0
+2020,Rwanda,general,2445.0
+2020,Saint Helena,general,5364.0
+2020,Saint Kitts and Nevis,general,683408.0
+2020,Saint Lucia,general,46001.0
+2020,Saint Pierre and Miquelon,general,121.0
+2020,Saint Vincent and the Grenadines,general,8066.0
+2020,Samoa,general,0.0
+2020,San Marino,general,2816.0
+2020,Saudi Arabia,general,216343.0
+2020,Senegal,general,7254.0
+2020,Serbia,general,4611151.0
+2020,Seychelles,general,7127.0
+2020,Sierra Leone,general,58933.0
+2020,Singapore,general,51111325.0
+2020,Sint Maarten,general,3927.0
+2020,Slovakia,general,6710484.0
+2020,Slovenia,general,2392343.0
+2020,Solomon Islands,general,819.0
+2020,Somalia,general,322.0
+2020,South Africa,general,1771358.0
+2020,South Korea,general,176928433.0
+2020,South Sudan,general,0.0
+2020,Spain,general,35256694.0
+2020,Sri Lanka,general,744025.0
+2020,Suriname,general,8235.0
+2020,Svalbard and Jan Mayen,general,0.0
+2020,Sweden,general,10533527.0
+2020,Switzerland,general,18409879.0
+2020,Syria,general,0.0
+2020,São Tomé and Príncipe,general,3114.0
+2020,Taiwan,general,375961102.0
+2020,Tajikistan,general,941.0
+2020,Tanzania,general,1851.0
+2020,Thailand,general,244528648.0
+2020,Timor-Leste,general,1768.0
+2020,Togo,general,1410.0
+2020,Tokelau,general,3781.0
+2020,Tonga,general,1500.0
+2020,Trinidad and Tobago,general,4554.0
+2020,Tunisia,general,2657942.0
+2020,Turkey,general,11100811.0
+2020,Turkmenistan,general,0.0
+2020,Turks and Caicos Islands,general,11557.0
+2020,Tuvalu,general,587.0
+2020,Uganda,general,347.0
+2020,Ukraine,general,2405435.0
+2020,United Arab Emirates,general,1482167.0
+2020,United Kingdom,general,43527347.0
+2020,Uruguay,general,5206.0
+2020,Uzbekistan,general,507.0
+2020,Vanuatu,general,0.0
+2020,Vatican City,general,5032.0
+2020,Venezuela,general,811800.0
+2020,Vietnam,general,489010296.0
+2020,Wallis and Futuna,general,98.0
+2020,West Bank,general,0.0
+2020,Yemen,general,0.0
+2020,Zambia,general,160.0
+2020,Zimbabwe,general,2605.0
+2021,Afghanistan,general,5655.0
+2021,Albania,general,15195.0
+2021,Algeria,general,2870.0
+2021,Andorra,general,60040.0
+2021,Angola,general,672.0
+2021,Anguilla,general,8884.0
+2021,Antigua and Barbuda,general,12772.0
+2021,Argentina,general,606451.0
+2021,Armenia,general,28951.0
+2021,Aruba,general,1029.0
+2021,Australia,general,6788704.0
+2021,Austria,general,17233290.0
+2021,Azerbaijan,general,2804.0
+2021,Bahamas,general,8759.0
+2021,Bahrain,general,2935.0
+2021,Bangladesh,general,152576.0
+2021,Barbados,general,42773.0
+2021,Belarus,general,95570.0
+2021,Belgium,general,12662698.0
+2021,Belize,general,24679.0
+2021,Benin,general,313.0
+2021,Bermuda,general,6393.0
+2021,Bhutan,general,373.0
+2021,Bolivia,general,10566.0
+2021,Bosnia and Herzegovina,general,220955.0
+2021,Botswana,general,361.0
+2021,Brazil,general,25842558.0
+2021,British Indian Ocean Territory,general,1309.0
+2021,British Virgin Islands,general,4700.0
+2021,Brunei,general,95775.0
+2021,Bulgaria,general,3229579.0
+2021,Burkina Faso,general,525.0
+2021,Cabo Verde,general,3757.0
+2021,Cambodia,general,34105685.0
+2021,Cameroon,general,64855.0
+2021,Canada,general,67139812.0
+2021,Cayman Islands,general,34970.0
+2021,Central African Republic,general,1631.0
+2021,Chad,general,175.0
+2021,Chile,general,278188.0
+2021,China,general,4540343426.0
+2021,Christmas Island,general,2722.0
+2021,Cocos (Keeling) Islands,general,21541.0
+2021,Colombia,general,5219610.0
+2021,Comoros,general,0.0
+2021,Cook Islands,general,5996.0
+2021,Costa Rica,general,5459532.0
+2021,Croatia,general,1346757.0
+2021,Curaçao,general,14875.0
+2021,Cyprus,general,37271.0
+2021,Czechia (Czech Republic),general,38825767.0
+2021,Côte d`Ivoire,general,8708.0
+2021,Democratic Republic of the Congo,general,2740.0
+2021,Denmark,general,15121777.0
+2021,Djibouti,general,459.0
+2021,Dominica,general,5812.0
+2021,Dominican Republic,general,9460637.0
+2021,Ecuador,general,2804676.0
+2021,Egypt,general,150206.0
+2021,El Salvador,general,2243527.0
+2021,Equatorial Guinea,general,0.0
+2021,Eritrea,general,126.0
+2021,Estonia,general,15733588.0
+2021,Eswatini (Swaziland),general,6755.0
+2021,Ethiopia,general,4269.0
+2021,Falkland Islands,general,0.0
+2021,Faroe Islands,general,2815.0
+2021,Fiji,general,6750.0
+2021,Finland,general,8368520.0
+2021,France,general,43413864.0
+2021,French Guiana,general,596.0
+2021,French Polynesia,general,4275.0
+2021,French Southern and Antarctic Lands,general,0.0
+2021,Gabon,general,494.0
+2021,Gambia,general,450.0
+2021,Gaza Strip,general,58284.0
+2021,Georgia,general,45481.0
+2021,Germany,general,226254804.0
+2021,Ghana,general,1387.0
+2021,Gibraltar,general,88.0
+2021,Greece,general,8233240.0
+2021,Greenland,general,599.0
+2021,Grenada,general,1175.0
+2021,Guadeloupe,general,6676.0
+2021,Guatemala,general,39692.0
+2021,Guinea,general,3633.0
+2021,Guinea-Bissau,general,0.0
+2021,Guyana,general,1795.0
+2021,Haiti,general,51115.0
+2021,Heard and McDonald Islands,general,650.0
+2021,Honduras,general,17500548.0
+2021,Hong Kong,general,12139581.0
+2021,Hungary,general,31264140.0
+2021,Iceland,general,101433.0
+2021,India,general,141956849.0
+2021,Indonesia,general,75238267.0
+2021,Iraq,general,586.0
+2021,Ireland,general,4717814.0
+2021,Israel,general,24650546.0
+2021,Italy,general,71154521.0
+2021,Jamaica,general,29114.0
+2021,Japan,general,520223365.0
+2021,Jordan,general,70833.0
+2021,Kazakhstan,general,4498.0
+2021,Kenya,general,17149.0
+2021,Kiribati,general,7.0
+2021,Kosovo,general,16.0
+2021,Kuwait,general,6872.0
+2021,Kyrgyzstan,general,4222.0
+2021,Laos,general,149355.0
+2021,Latvia,general,2208174.0
+2021,Lebanon,general,25026.0
+2021,Lesotho,general,14265.0
+2021,Liberia,general,610.0
+2021,Libya,general,0.0
+2021,Liechtenstein,general,384807.0
+2021,Lithuania,general,3116468.0
+2021,Luxembourg,general,647504.0
+2021,Macau,general,59847.0
+2021,Madagascar,general,71.0
+2021,Malawi,general,194.0
+2021,Malaysia,general,463115403.0
+2021,Maldives,general,40.0
+2021,Mali,general,9635.0
+2021,Malta,general,1966582.0
+2021,Marshall Islands,general,9002.0
+2021,Martinique,general,174.0
+2021,Mauritania,general,2209.0
+2021,Mauritius,general,43901.0
+2021,Mayotte,general,999.0
+2021,Mexico,general,298028174.0
+2021,Micronesia,general,410.0
+2021,Moldova,general,65519.0
+2021,Monaco,general,13064.0
+2021,Mongolia,general,3908.0
+2021,Montenegro,general,70190.0
+2021,Montserrat ,general,5435.0
+2021,Morocco,general,5181458.0
+2021,Mozambique,general,2541.0
+2021,Myanmar (Burma),general,844529.0
+2021,Namibia,general,9015.0
+2021,Nauru,general,9208.0
+2021,Nepal,general,1578.0
+2021,Netherlands,general,32496284.0
+2021,New Caledonia,general,14144.0
+2021,New Zealand,general,3515093.0
+2021,Nicaragua,general,28711946.0
+2021,Niger,general,93967.0
+2021,Nigeria,general,23681.0
+2021,Niue,general,0.0
+2021,Norfolk Island,general,442.0
+2021,North Macedonia,general,1021629.0
+2021,Norway,general,3222384.0
+2021,Oman,general,51083.0
+2021,Pakistan,general,407393.0
+2021,Palau,general,0.0
+2021,Panama,general,118279.0
+2021,Papua New Guinea,general,1455.0
+2021,Paraguay,general,234371.0
+2021,Peru,general,475063.0
+2021,Philippines,general,168124069.0
+2021,Pitcairn Islands,general,111.0
+2021,Poland,general,37169538.0
+2021,Portugal,general,7584155.0
+2021,Qatar,general,11306.0
+2021,Republic of the Congo,general,346.0
+2021,Reunion,general,517.0
+2021,Romania,general,19100978.0
+2021,Russia,general,2836939.0
+2021,Rwanda,general,1939.0
+2021,Saint Helena,general,1787.0
+2021,Saint Kitts and Nevis,general,605910.0
+2021,Saint Lucia,general,38639.0
+2021,Saint Pierre and Miquelon,general,1869.0
+2021,Saint Vincent and the Grenadines,general,13656.0
+2021,Samoa,general,10581.0
+2021,San Marino,general,2230.0
+2021,Saudi Arabia,general,777498.0
+2021,Senegal,general,1248.0
+2021,Serbia,general,4174387.0
+2021,Seychelles,general,13303.0
+2021,Sierra Leone,general,46909.0
+2021,Singapore,general,51701767.0
+2021,Sint Maarten,general,22453.0
+2021,Slovakia,general,9688687.0
+2021,Slovenia,general,3941239.0
+2021,Solomon Islands,general,0.0
+2021,Somalia,general,567.0
+2021,South Africa,general,1819751.0
+2021,South Korea,general,352545480.0
+2021,South Sudan,general,0.0
+2021,Spain,general,35305255.0
+2021,Sri Lanka,general,921791.0
+2021,Suriname,general,8299.0
+2021,Svalbard and Jan Mayen,general,0.0
+2021,Sweden,general,12422239.0
+2021,Switzerland,general,24598033.0
+2021,Syria,general,50.0
+2021,São Tomé and Príncipe,general,2319.0
+2021,Taiwan,general,645354278.0
+2021,Tajikistan,general,1452.0
+2021,Tanzania,general,1155.0
+2021,Thailand,general,392183574.0
+2021,Timor-Leste,general,3969.0
+2021,Togo,general,28.0
+2021,Tokelau,general,0.0
+2021,Tonga,general,0.0
+2021,Trinidad and Tobago,general,4711.0
+2021,Tunisia,general,3601400.0
+2021,Turkey,general,17453888.0
+2021,Turkmenistan,general,241.0
+2021,Turks and Caicos Islands,general,12548.0
+2021,Tuvalu,general,730.0
+2021,Uganda,general,0.0
+2021,Ukraine,general,2923193.0
+2021,United Arab Emirates,general,3142919.0
+2021,United Kingdom,general,53000270.0
+2021,Uruguay,general,12433.0
+2021,Uzbekistan,general,525.0
+2021,Vanuatu,general,0.0
+2021,Vatican City,general,3679.0
+2021,Venezuela,general,920948.0
+2021,Vietnam,general,823474844.0
+2021,Wallis and Futuna,general,157.0
+2021,West Bank,general,4400.0
+2021,Yemen,general,252.0
+2021,Zambia,general,500.0
+2021,Zimbabwe,general,124.0
+2022,Afghanistan,general,27453.0
+2022,Albania,general,19043.0
+2022,Algeria,general,3740.0
+2022,Andorra,general,78553.0
+2022,Angola,general,568.0
+2022,Anguilla,general,3315.0
+2022,Antigua and Barbuda,general,16961.0
+2022,Argentina,general,1120085.0
+2022,Armenia,general,778680.0
+2022,Aruba,general,3369.0
+2022,Australia,general,10308116.0
+2022,Austria,general,36379147.0
+2022,Azerbaijan,general,1228.0
+2022,Bahamas,general,14477.0
+2022,Bahrain,general,4094.0
+2022,Bangladesh,general,559361.0
+2022,Barbados,general,3937.0
+2022,Belarus,general,77238.0
+2022,Belgium,general,11771694.0
+2022,Belize,general,30578.0
+2022,Benin,general,0.0
+2022,Bermuda,general,1967.0
+2022,Bhutan,general,75.0
+2022,Bolivia,general,6801.0
+2022,Bosnia and Herzegovina,general,224414.0
+2022,Botswana,general,1116.0
+2022,Brazil,general,36371170.0
+2022,British Indian Ocean Territory,general,600.0
+2022,British Virgin Islands,general,718.0
+2022,Brunei,general,108800.0
+2022,Bulgaria,general,3435639.0
+2022,Burkina Faso,general,1609.0
+2022,Cabo Verde,general,2181.0
+2022,Cambodia,general,87107309.0
+2022,Cameroon,general,121930.0
+2022,Canada,general,80592075.0
+2022,Cayman Islands,general,61464.0
+2022,Central African Republic,general,0.0
+2022,Chad,general,12310.0
+2022,Chile,general,702210.0
+2022,China,general,4795969688.0
+2022,Christmas Island,general,13647.0
+2022,Cocos (Keeling) Islands,general,1109.0
+2022,Colombia,general,9159170.0
+2022,Comoros,general,3515.0
+2022,Cook Islands,general,1783.0
+2022,Costa Rica,general,8817330.0
+2022,Croatia,general,4187890.0
+2022,Curaçao,general,21868.0
+2022,Cyprus,general,33141.0
+2022,Czechia (Czech Republic),general,40734290.0
+2022,Côte d`Ivoire,general,6697.0
+2022,Democratic Republic of the Congo,general,1516.0
+2022,Denmark,general,11239612.0
+2022,Djibouti,general,976.0
+2022,Dominica,general,2207.0
+2022,Dominican Republic,general,10706381.0
+2022,Ecuador,general,3951655.0
+2022,Egypt,general,273091.0
+2022,El Salvador,general,3057711.0
+2022,Equatorial Guinea,general,1001.0
+2022,Eritrea,general,122.0
+2022,Estonia,general,7420304.0
+2022,Eswatini (Swaziland),general,32065.0
+2022,Ethiopia,general,7794.0
+2022,Falkland Islands,general,1394.0
+2022,Faroe Islands,general,2024.0
+2022,Fiji,general,8100.0
+2022,Finland,general,11170840.0
+2022,France,general,52823348.0
+2022,French Guiana,general,248.0
+2022,French Polynesia,general,25593.0
+2022,French Southern and Antarctic Lands,general,642.0
+2022,Gabon,general,3335.0
+2022,Gambia,general,4586.0
+2022,Gaza Strip,general,57749.0
+2022,Georgia,general,23099.0
+2022,Germany,general,293067041.0
+2022,Ghana,general,12221.0
+2022,Gibraltar,general,10.0
+2022,Greece,general,10952057.0
+2022,Greenland,general,174.0
+2022,Grenada,general,1165.0
+2022,Guadeloupe,general,5362.0
+2022,Guatemala,general,25236.0
+2022,Guinea,general,3418.0
+2022,Guinea-Bissau,general,0.0
+2022,Guyana,general,4554.0
+2022,Haiti,general,63218.0
+2022,Heard and McDonald Islands,general,2379.0
+2022,Honduras,general,17531572.0
+2022,Hong Kong,general,12429843.0
+2022,Hungary,general,34710626.0
+2022,Iceland,general,101953.0
+2022,India,general,219149800.0
+2022,Indonesia,general,126217597.0
+2022,Iraq,general,2030.0
+2022,Ireland,general,18803832.0
+2022,Israel,general,33952620.0
+2022,Italy,general,97433753.0
+2022,Jamaica,general,55382.0
+2022,Japan,general,643795915.0
+2022,Jordan,general,207087.0
+2022,Kazakhstan,general,29187.0
+2022,Kenya,general,20693.0
+2022,Kiribati,general,0.0
+2022,Kosovo,general,8319.0
+2022,Kuwait,general,4795.0
+2022,Kyrgyzstan,general,2550.0
+2022,Laos,general,201898.0
+2022,Latvia,general,2037556.0
+2022,Lebanon,general,30695.0
+2022,Lesotho,general,24760.0
+2022,Liberia,general,1048.0
+2022,Libya,general,842.0
+2022,Liechtenstein,general,291763.0
+2022,Lithuania,general,2573659.0
+2022,Luxembourg,general,735656.0
+2022,Macau,general,104611.0
+2022,Madagascar,general,669.0
+2022,Malawi,general,808.0
+2022,Malaysia,general,622497718.0
+2022,Maldives,general,212.0
+2022,Mali,general,29732.0
+2022,Malta,general,1469865.0
+2022,Marshall Islands,general,1010.0
+2022,Martinique,general,475.0
+2022,Mauritania,general,4318.0
+2022,Mauritius,general,24524.0
+2022,Mayotte,general,94.0
+2022,Mexico,general,371444808.0
+2022,Micronesia,general,594.0
+2022,Moldova,general,46020.0
+2022,Monaco,general,26721.0
+2022,Mongolia,general,3488.0
+2022,Montenegro,general,75303.0
+2022,Montserrat ,general,12742.0
+2022,Morocco,general,6458674.0
+2022,Mozambique,general,2413.0
+2022,Myanmar (Burma),general,601585.0
+2022,Namibia,general,4046.0
+2022,Nauru,general,16065.0
+2022,Nepal,general,1643.0
+2022,Netherlands,general,31866454.0
+2022,New Caledonia,general,37067.0
+2022,New Zealand,general,3889996.0
+2022,Nicaragua,general,23787804.0
+2022,Niger,general,5478.0
+2022,Nigeria,general,28548.0
+2022,Niue,general,429.0
+2022,Norfolk Island,general,0.0
+2022,North Macedonia,general,1291250.0
+2022,Norway,general,4226682.0
+2022,Oman,general,78965.0
+2022,Pakistan,general,1053465.0
+2022,Palau,general,0.0
+2022,Panama,general,230511.0
+2022,Papua New Guinea,general,843.0
+2022,Paraguay,general,299922.0
+2022,Peru,general,1455338.0
+2022,Philippines,general,179238251.0
+2022,Pitcairn Islands,general,4302.0
+2022,Poland,general,67228417.0
+2022,Portugal,general,10968274.0
+2022,Qatar,general,10248.0
+2022,Republic of the Congo,general,1932.0
+2022,Reunion,general,1834.0
+2022,Romania,general,20992048.0
+2022,Russia,general,4132654.0
+2022,Rwanda,general,3953.0
+2022,Saint Helena,general,2521.0
+2022,Saint Kitts and Nevis,general,632486.0
+2022,Saint Lucia,general,42539.0
+2022,Saint Pierre and Miquelon,general,0.0
+2022,Saint Vincent and the Grenadines,general,6280.0
+2022,Samoa,general,2649.0
+2022,San Marino,general,22860.0
+2022,Saudi Arabia,general,1139501.0
+2022,Senegal,general,3122.0
+2022,Serbia,general,7083063.0
+2022,Seychelles,general,14783.0
+2022,Sierra Leone,general,66398.0
+2022,Singapore,general,63119352.0
+2022,Sint Maarten,general,17756.0
+2022,Slovakia,general,12001750.0
+2022,Slovenia,general,4714936.0
+2022,Solomon Islands,general,255.0
+2022,Somalia,general,63.0
+2022,South Africa,general,2945922.0
+2022,South Korea,general,583325126.0
+2022,South Sudan,general,0.0
+2022,Spain,general,38668168.0
+2022,Sri Lanka,general,1302822.0
+2022,Suriname,general,10105.0
+2022,Svalbard and Jan Mayen,general,463.0
+2022,Sweden,general,14646594.0
+2022,Switzerland,general,28890842.0
+2022,Syria,general,2736.0
+2022,São Tomé and Príncipe,general,4132.0
+2022,Taiwan,general,695814895.0
+2022,Tajikistan,general,728.0
+2022,Tanzania,general,226.0
+2022,Thailand,general,535033701.0
+2022,Timor-Leste,general,1842.0
+2022,Togo,general,522.0
+2022,Tokelau,general,0.0
+2022,Tonga,general,871.0
+2022,Trinidad and Tobago,general,15898.0
+2022,Tunisia,general,4754121.0
+2022,Turkey,general,33006399.0
+2022,Turkmenistan,general,451.0
+2022,Turks and Caicos Islands,general,14390.0
+2022,Tuvalu,general,1830.0
+2022,Uganda,general,1804.0
+2022,Ukraine,general,3585918.0
+2022,United Arab Emirates,general,8281992.0
+2022,United Kingdom,general,63054463.0
+2022,Uruguay,general,30701.0
+2022,Uzbekistan,general,5045.0
+2022,Vanuatu,general,77.0
+2022,Vatican City,general,3606.0
+2022,Venezuela,general,282317.0
+2022,Vietnam,general,1291063364.0
+2022,Wallis and Futuna,general,583.0
+2022,West Bank,general,20.0
+2022,Yemen,general,3247.0
+2022,Zambia,general,455.0
+2022,Zimbabwe,general,0.0
+2023,Afghanistan,general,38153.0
+2023,Albania,general,19958.0
+2023,Algeria,general,8702.0
+2023,Andorra,general,58355.0
+2023,Angola,general,0.0
+2023,Anguilla,general,4986.0
+2023,Antigua and Barbuda,general,245963.0
+2023,Argentina,general,569614.0
+2023,Armenia,general,205294.0
+2023,Aruba,general,1040.0
+2023,Australia,general,8059004.0
+2023,Austria,general,54179815.0
+2023,Azerbaijan,general,2169.0
+2023,Bahamas,general,13518.0
+2023,Bahrain,general,7413.0
+2023,Bangladesh,general,321445.0
+2023,Barbados,general,23278.0
+2023,Belarus,general,6725.0
+2023,Belgium,general,9465493.0
+2023,Belize,general,21341.0
+2023,Benin,general,0.0
+2023,Bermuda,general,4256.0
+2023,Bhutan,general,450.0
+2023,Bolivia,general,18142.0
+2023,Bosnia and Herzegovina,general,234618.0
+2023,Botswana,general,3735.0
+2023,Brazil,general,41964102.0
+2023,British Indian Ocean Territory,general,9025.0
+2023,British Virgin Islands,general,363.0
+2023,Brunei,general,2435.0
+2023,Bulgaria,general,4104645.0
+2023,Burkina Faso,general,0.0
+2023,Cabo Verde,general,3021.0
+2023,Cambodia,general,103788964.0
+2023,Cameroon,general,45262.0
+2023,Canada,general,90585062.0
+2023,Cayman Islands,general,45429.0
+2023,Central African Republic,general,44.0
+2023,Chad,general,2135.0
+2023,Chile,general,704155.0
+2023,China,general,2911449675.0
+2023,Christmas Island,general,9972.0
+2023,Cocos (Keeling) Islands,general,4075.0
+2023,Colombia,general,7472696.0
+2023,Comoros,general,0.0
+2023,Cook Islands,general,24.0
+2023,Costa Rica,general,9511878.0
+2023,Croatia,general,8966865.0
+2023,Curaçao,general,25950.0
+2023,Cyprus,general,48009.0
+2023,Czechia (Czech Republic),general,33061944.0
+2023,Côte d`Ivoire,general,1089.0
+2023,Democratic Republic of the Congo,general,527.0
+2023,Denmark,general,9596576.0
+2023,Djibouti,general,1669.0
+2023,Dominica,general,4341.0
+2023,Dominican Republic,general,11341032.0
+2023,Ecuador,general,2237172.0
+2023,Egypt,general,1071649.0
+2023,El Salvador,general,2414514.0
+2023,Equatorial Guinea,general,0.0
+2023,Eritrea,general,29.0
+2023,Estonia,general,4351544.0
+2023,Eswatini (Swaziland),general,12322.0
+2023,Ethiopia,general,1918.0
+2023,Falkland Islands,general,1977.0
+2023,Faroe Islands,general,4146.0
+2023,Fiji,general,3960.0
+2023,Finland,general,11901550.0
+2023,France,general,51398517.0
+2023,French Guiana,general,9415.0
+2023,French Polynesia,general,5029.0
+2023,French Southern and Antarctic Lands,general,382.0
+2023,Gabon,general,967.0
+2023,Gambia,general,1995.0
+2023,Gaza Strip,general,9459.0
+2023,Georgia,general,45432.0
+2023,Germany,general,262136010.0
+2023,Ghana,general,787.0
+2023,Gibraltar,general,236.0
+2023,Greece,general,2883196.0
+2023,Greenland,general,292.0
+2023,Grenada,general,2509.0
+2023,Guadeloupe,general,24804.0
+2023,Guatemala,general,621416.0
+2023,Guinea,general,3666.0
+2023,Guinea-Bissau,general,0.0
+2023,Guyana,general,21554.0
+2023,Haiti,general,56758.0
+2023,Heard and McDonald Islands,general,798.0
+2023,Honduras,general,29403570.0
+2023,Hong Kong,general,7073731.0
+2023,Hungary,general,48376334.0
+2023,Iceland,general,43309.0
+2023,India,general,301951088.0
+2023,Indonesia,general,120873389.0
+2023,Iraq,general,4127.0
+2023,Ireland,general,17610414.0
+2023,Israel,general,50082923.0
+2023,Italy,general,81729597.0
+2023,Jamaica,general,17518.0
+2023,Japan,general,402118744.0
+2023,Jordan,general,1874364.0
+2023,Kazakhstan,general,21600.0
+2023,Kenya,general,20219.0
+2023,Kiribati,general,1630.0
+2023,Kosovo,general,431.0
+2023,Kuwait,general,6781.0
+2023,Kyrgyzstan,general,4125.0
+2023,Laos,general,300627.0
+2023,Latvia,general,1907283.0
+2023,Lebanon,general,26456.0
+2023,Lesotho,general,4313.0
+2023,Liberia,general,774.0
+2023,Libya,general,1951.0
+2023,Liechtenstein,general,280744.0
+2023,Lithuania,general,2290032.0
+2023,Luxembourg,general,639857.0
+2023,Macau,general,74435.0
+2023,Madagascar,general,537.0
+2023,Malawi,general,918.0
+2023,Malaysia,general,435397855.0
+2023,Maldives,general,1760.0
+2023,Mali,general,6097.0
+2023,Malta,general,1404979.0
+2023,Marshall Islands,general,146.0
+2023,Martinique,general,253.0
+2023,Mauritania,general,4208.0
+2023,Mauritius,general,23176.0
+2023,Mayotte,general,927.0
+2023,Mexico,general,390740809.0
+2023,Micronesia,general,5562.0
+2023,Moldova,general,135723.0
+2023,Monaco,general,23183.0
+2023,Mongolia,general,2749.0
+2023,Montenegro,general,75049.0
+2023,Montserrat ,general,4294.0
+2023,Morocco,general,6713470.0
+2023,Mozambique,general,1388.0
+2023,Myanmar (Burma),general,270283.0
+2023,Namibia,general,8286.0
+2023,Nauru,general,1733.0
+2023,Nepal,general,366.0
+2023,Netherlands,general,20290741.0
+2023,New Caledonia,general,6150.0
+2023,New Zealand,general,2681420.0
+2023,Nicaragua,general,55899544.0
+2023,Niger,general,6670.0
+2023,Nigeria,general,8875.0
+2023,Niue,general,117.0
+2023,Norfolk Island,general,0.0
+2023,North Macedonia,general,614954.0
+2023,Norway,general,4046589.0
+2023,Oman,general,67605.0
+2023,Pakistan,general,339097.0
+2023,Palau,general,46.0
+2023,Panama,general,182641.0
+2023,Papua New Guinea,general,984.0
+2023,Paraguay,general,433499.0
+2023,Peru,general,1537313.0
+2023,Philippines,general,129278232.0
+2023,Pitcairn Islands,general,0.0
+2023,Poland,general,48877856.0
+2023,Portugal,general,8986001.0
+2023,Qatar,general,11770.0
+2023,Republic of the Congo,general,671.0
+2023,Reunion,general,532.0
+2023,Romania,general,21469763.0
+2023,Russia,general,556581.0
+2023,Rwanda,general,1202.0
+2023,Saint Helena,general,2079.0
+2023,Saint Kitts and Nevis,general,518147.0
+2023,Saint Lucia,general,13506.0
+2023,Saint Pierre and Miquelon,general,0.0
+2023,Saint Vincent and the Grenadines,general,2677.0
+2023,Samoa,general,12502.0
+2023,San Marino,general,5413.0
+2023,Saudi Arabia,general,192632.0
+2023,Senegal,general,5998.0
+2023,Serbia,general,5156666.0
+2023,Seychelles,general,2024.0
+2023,Sierra Leone,general,45560.0
+2023,Singapore,general,71824049.0
+2023,Sint Maarten,general,36289.0
+2023,Slovakia,general,10581239.0
+2023,Slovenia,general,3695976.0
+2023,Solomon Islands,general,474.0
+2023,Somalia,general,200.0
+2023,South Africa,general,3147113.0
+2023,South Korea,general,383473698.0
+2023,South Sudan,general,2723.0
+2023,Spain,general,35515353.0
+2023,Sri Lanka,general,1103643.0
+2023,Suriname,general,2293.0
+2023,Svalbard and Jan Mayen,general,0.0
+2023,Sweden,general,15755200.0
+2023,Switzerland,general,28138716.0
+2023,Syria,general,258.0
+2023,São Tomé and Príncipe,general,2506.0
+2023,Taiwan,general,441943645.0
+2023,Tajikistan,general,7249.0
+2023,Tanzania,general,2092.0
+2023,Thailand,general,407342280.0
+2023,Timor-Leste,general,1873.0
+2023,Togo,general,1250.0
+2023,Tokelau,general,1.0
+2023,Tonga,general,15570.0
+2023,Trinidad and Tobago,general,99162.0
+2023,Tunisia,general,4299320.0
+2023,Turkey,general,21584754.0
+2023,Turkmenistan,general,382.0
+2023,Turks and Caicos Islands,general,24046.0
+2023,Tuvalu,general,5668.0
+2023,Uganda,general,1135.0
+2023,Ukraine,general,2233406.0
+2023,United Arab Emirates,general,4442616.0
+2023,United Kingdom,general,60424300.0
+2023,Uruguay,general,42871.0
+2023,Uzbekistan,general,5353.0
+2023,Vanuatu,general,3990.0
+2023,Vatican City,general,1842.0
+2023,Venezuela,general,216370.0
+2023,Vietnam,general,689339202.0
+2023,Wallis and Futuna,general,8.0
+2023,West Bank,general,492.0
+2023,Yemen,general,2454.0
+2023,Zambia,general,76.0
+2023,Zimbabwe,general,1929.0
+2024,Afghanistan,general,2966.0
+2024,Albania,general,32238.0
+2024,Algeria,general,4328.0
+2024,Andorra,general,64120.0
+2024,Angola,general,0.0
+2024,Anguilla,general,2241.0
+2024,Antigua and Barbuda,general,8673.0
+2024,Argentina,general,538847.0
+2024,Armenia,general,13030.0
+2024,Aruba,general,3200.0
+2024,Australia,general,6753854.0
+2024,Austria,general,48960660.0
+2024,Azerbaijan,general,6694.0
+2024,Bahamas,general,35013.0
+2024,Bahrain,general,2409.0
+2024,Bangladesh,general,259630.0
+2024,Barbados,general,16898.0
+2024,Belarus,general,3882.0
+2024,Belgium,general,12789506.0
+2024,Belize,general,14879.0
+2024,Benin,general,194.0
+2024,Bermuda,general,9922.0
+2024,Bhutan,general,0.0
+2024,Bolivia,general,12797.0
+2024,Bosnia and Herzegovina,general,233912.0
+2024,Botswana,general,1164.0
+2024,Brazil,general,50160328.0
+2024,British Indian Ocean Territory,general,2514.0
+2024,British Virgin Islands,general,45520.0
+2024,Brunei,general,624.0
+2024,Bulgaria,general,3955400.0
+2024,Burkina Faso,general,1077.0
+2024,Cabo Verde,general,568.0
+2024,Cambodia,general,78323868.0
+2024,Cameroon,general,40447.0
+2024,Canada,general,90967766.0
+2024,Cayman Islands,general,1133052.0
+2024,Central African Republic,general,202.0
+2024,Chad,general,1656.0
+2024,Chile,general,542886.0
+2024,China,general,3085041903.0
+2024,Christmas Island,general,6464.0
+2024,Cocos (Keeling) Islands,general,6149.0
+2024,Colombia,general,11811971.0
+2024,Comoros,general,0.0
+2024,Cook Islands,general,1305.0
+2024,Costa Rica,general,9321459.0
+2024,Croatia,general,12714797.0
+2024,Curaçao,general,19674.0
+2024,Cyprus,general,64574.0
+2024,Czechia (Czech Republic),general,33208483.0
+2024,Côte d`Ivoire,general,24856.0
+2024,Democratic Republic of the Congo,general,1157.0
+2024,Denmark,general,14000689.0
+2024,Djibouti,general,2946.0
+2024,Dominica,general,10208.0
+2024,Dominican Republic,general,9844183.0
+2024,Ecuador,general,2471868.0
+2024,Egypt,general,1844616.0
+2024,El Salvador,general,3392415.0
+2024,Equatorial Guinea,general,0.0
+2024,Eritrea,general,0.0
+2024,Estonia,general,6461241.0
+2024,Eswatini (Swaziland),general,10301.0
+2024,Ethiopia,general,1352.0
+2024,Falkland Islands,general,210.0
+2024,Faroe Islands,general,450.0
+2024,Fiji,general,3900.0
+2024,Finland,general,12424305.0
+2024,France,general,46980947.0
+2024,French Guiana,general,3006.0
+2024,French Polynesia,general,7879.0
+2024,French Southern and Antarctic Lands,general,24.0
+2024,Gabon,general,32477.0
+2024,Gambia,general,160.0
+2024,Gaza Strip,general,4552.0
+2024,Georgia,general,51833.0
+2024,Germany,general,245558967.0
+2024,Ghana,general,2191.0
+2024,Gibraltar,general,336.0
+2024,Greece,general,3860738.0
+2024,Greenland,general,23.0
+2024,Grenada,general,1950.0
+2024,Guadeloupe,general,9244.0
+2024,Guatemala,general,1054516.0
+2024,Guinea,general,1967.0
+2024,Guinea-Bissau,general,0.0
+2024,Guyana,general,984.0
+2024,Haiti,general,34067.0
+2024,Heard and McDonald Islands,general,1028.0
+2024,Honduras,general,47834800.0
+2024,Hong Kong,general,5325518.0
+2024,Hungary,general,37998203.0
+2024,Iceland,general,53750.0
+2024,India,general,339460771.0
+2024,Indonesia,general,118290983.0
+2024,Iraq,general,594.0
+2024,Ireland,general,13450111.0
+2024,Israel,general,45429586.0
+2024,Italy,general,85622612.0
+2024,Jamaica,general,15367.0
+2024,Japan,general,330266281.0
+2024,Jordan,general,1677987.0
+2024,Kazakhstan,general,18538.0
+2024,Kenya,general,13645.0
+2024,Kiribati,general,250.0
+2024,Kosovo,general,1.0
+2024,Kuwait,general,3811.0
+2024,Kyrgyzstan,general,5292.0
+2024,Laos,general,29213476.0
+2024,Latvia,general,2235915.0
+2024,Lebanon,general,34110.0
+2024,Lesotho,general,2814.0
+2024,Liberia,general,500.0
+2024,Libya,general,2668.0
+2024,Liechtenstein,general,244305.0
+2024,Lithuania,general,2135250.0
+2024,Luxembourg,general,503664.0
+2024,Macau,general,69169.0
+2024,Madagascar,general,0.0
+2024,Malawi,general,159.0
+2024,Malaysia,general,422441824.0
+2024,Maldives,general,2846.0
+2024,Mali,general,15268.0
+2024,Malta,general,1006585.0
+2024,Marshall Islands,general,1722.0
+2024,Martinique,general,0.0
+2024,Mauritania,general,1940.0
+2024,Mauritius,general,128933.0
+2024,Mayotte,general,607.0
+2024,Mexico,general,422384469.0
+2024,Micronesia,general,1346.0
+2024,Moldova,general,127465.0
+2024,Monaco,general,22492.0
+2024,Mongolia,general,5290.0
+2024,Montenegro,general,57357.0
+2024,Montserrat ,general,5390.0
+2024,Morocco,general,6756220.0
+2024,Mozambique,general,1976.0
+2024,Myanmar (Burma),general,598463.0
+2024,Namibia,general,10430.0
+2024,Nauru,general,2617.0
+2024,Nepal,general,1847.0
+2024,Netherlands,general,22166086.0
+2024,New Caledonia,general,9268.0
+2024,New Zealand,general,2492167.0
+2024,Nicaragua,general,39033685.0
+2024,Niger,general,4077.0
+2024,Nigeria,general,3668.0
+2024,Niue,general,519.0
+2024,Norfolk Island,general,0.0
+2024,North Macedonia,general,1015965.0
+2024,Norway,general,5717901.0
+2024,Oman,general,60418.0
+2024,Pakistan,general,533009.0
+2024,Palau,general,0.0
+2024,Panama,general,332288.0
+2024,Papua New Guinea,general,1693.0
+2024,Paraguay,general,275558.0
+2024,Peru,general,1389296.0
+2024,Philippines,general,130138449.0
+2024,Pitcairn Islands,general,0.0
+2024,Poland,general,41453156.0
+2024,Portugal,general,7126941.0
+2024,Qatar,general,7761.0
+2024,Republic of the Congo,general,471.0
+2024,Reunion,general,2139.0
+2024,Romania,general,22200039.0
+2024,Russia,general,394141.0
+2024,Rwanda,general,1646.0
+2024,Saint Helena,general,1916.0
+2024,Saint Kitts and Nevis,general,473010.0
+2024,Saint Lucia,general,12972.0
+2024,Saint Pierre and Miquelon,general,204.0
+2024,Saint Vincent and the Grenadines,general,10139.0
+2024,Samoa,general,0.0
+2024,San Marino,general,4104.0
+2024,Saudi Arabia,general,1043817.0
+2024,Senegal,general,2381.0
+2024,Serbia,general,3084028.0
+2024,Seychelles,general,14356.0
+2024,Sierra Leone,general,38959.0
+2024,Singapore,general,45705344.0
+2024,Sint Maarten,general,24326.0
+2024,Slovakia,general,10623887.0
+2024,Slovenia,general,4089371.0
+2024,Solomon Islands,general,1168.0
+2024,Somalia,general,29823.0
+2024,South Africa,general,3520519.0
+2024,South Korea,general,310043961.0
+2024,South Sudan,general,0.0
+2024,Spain,general,24210770.0
+2024,Sri Lanka,general,1432288.0
+2024,Suriname,general,10935.0
+2024,Svalbard and Jan Mayen,general,0.0
+2024,Sweden,general,16658406.0
+2024,Switzerland,general,29551092.0
+2024,Syria,general,42.0
+2024,São Tomé and Príncipe,general,3836.0
+2024,Taiwan,general,484779878.0
+2024,Tajikistan,general,821.0
+2024,Tanzania,general,2334.0
+2024,Thailand,general,421753623.0
+2024,Timor-Leste,general,5619.0
+2024,Togo,general,1144.0
+2024,Tokelau,general,0.0
+2024,Tonga,general,7435.0
+2024,Trinidad and Tobago,general,16198.0
+2024,Tunisia,general,4180667.0
+2024,Turkey,general,31962538.0
+2024,Turkmenistan,general,6804.0
+2024,Turks and Caicos Islands,general,15403.0
+2024,Tuvalu,general,50.0
+2024,Uganda,general,2003.0
+2024,Ukraine,general,2000501.0
+2024,United Arab Emirates,general,3865892.0
+2024,United Kingdom,general,52986748.0
+2024,Uruguay,general,47296.0
+2024,Uzbekistan,general,7648.0
+2024,Vanuatu,general,3278.0
+2024,Vatican City,general,0.0
+2024,Venezuela,general,64670.0
+2024,Vietnam,general,864157585.0
+2024,Wallis and Futuna,general,0.0
+2024,West Bank,general,0.0
+2024,Yemen,general,5.0
+2024,Zambia,general,1390.0
+2024,Zimbabwe,general,295.0
+2025,Afghanistan,general,0.0
+2025,Albania,general,0.0
+2025,Algeria,general,0.0
+2025,Andorra,general,0.0
+2025,Angola,general,0.0
+2025,Anguilla,general,0.0
+2025,Antigua and Barbuda,general,0.0
+2025,Argentina,general,0.0
+2025,Armenia,general,0.0
+2025,Aruba,general,0.0
+2025,Australia,general,0.0
+2025,Austria,general,0.0
+2025,Azerbaijan,general,0.0
+2025,Bahamas,general,0.0
+2025,Bahrain,general,0.0
+2025,Bangladesh,general,0.0
+2025,Barbados,general,0.0
+2025,Belarus,general,0.0
+2025,Belgium,general,0.0
+2025,Belize,general,0.0
+2025,Benin,general,0.0
+2025,Bermuda,general,0.0
+2025,Bhutan,general,0.0
+2025,Bolivia,general,0.0
+2025,Bosnia and Herzegovina,general,0.0
+2025,Botswana,general,0.0
+2025,Brazil,general,0.0
+2025,British Indian Ocean Territory,general,0.0
+2025,British Virgin Islands,general,0.0
+2025,Brunei,general,0.0
+2025,Bulgaria,general,0.0
+2025,Burkina Faso,general,0.0
+2025,Cabo Verde,general,0.0
+2025,Cambodia,general,0.0
+2025,Cameroon,general,0.0
+2025,Canada,general,0.0
+2025,Cayman Islands,general,0.0
+2025,Central African Republic,general,0.0
+2025,Chad,general,0.0
+2025,Chile,general,0.0
+2025,China,general,0.0
+2025,Christmas Island,general,0.0
+2025,Cocos (Keeling) Islands,general,0.0
+2025,Colombia,general,0.0
+2025,Comoros,general,0.0
+2025,Cook Islands,general,0.0
+2025,Costa Rica,general,0.0
+2025,Croatia,general,0.0
+2025,Curaçao,general,0.0
+2025,Cyprus,general,0.0
+2025,Czechia (Czech Republic),general,0.0
+2025,Côte d`Ivoire,general,0.0
+2025,Democratic Republic of the Congo,general,0.0
+2025,Denmark,general,0.0
+2025,Djibouti,general,0.0
+2025,Dominica,general,0.0
+2025,Dominican Republic,general,0.0
+2025,Ecuador,general,0.0
+2025,Egypt,general,0.0
+2025,El Salvador,general,0.0
+2025,Equatorial Guinea,general,0.0
+2025,Eritrea,general,0.0
+2025,Estonia,general,0.0
+2025,Eswatini (Swaziland),general,0.0
+2025,Ethiopia,general,0.0
+2025,Falkland Islands,general,0.0
+2025,Faroe Islands,general,0.0
+2025,Fiji,general,0.0
+2025,Finland,general,0.0
+2025,France,general,0.0
+2025,French Guiana,general,0.0
+2025,French Polynesia,general,0.0
+2025,French Southern and Antarctic Lands,general,0.0
+2025,Gabon,general,0.0
+2025,Gambia,general,0.0
+2025,Gaza Strip,general,0.0
+2025,Georgia,general,0.0
+2025,Germany,general,0.0
+2025,Ghana,general,0.0
+2025,Gibraltar,general,0.0
+2025,Greece,general,0.0
+2025,Greenland,general,0.0
+2025,Grenada,general,0.0
+2025,Guadeloupe,general,0.0
+2025,Guatemala,general,0.0
+2025,Guinea,general,0.0
+2025,Guinea-Bissau,general,0.0
+2025,Guyana,general,0.0
+2025,Haiti,general,0.0
+2025,Heard and McDonald Islands,general,0.0
+2025,Honduras,general,0.0
+2025,Hong Kong,general,0.0
+2025,Hungary,general,0.0
+2025,Iceland,general,0.0
+2025,India,general,0.0
+2025,Indonesia,general,0.0
+2025,Iraq,general,0.0
+2025,Ireland,general,0.0
+2025,Israel,general,0.0
+2025,Italy,general,0.0
+2025,Jamaica,general,0.0
+2025,Japan,general,0.0
+2025,Jordan,general,0.0
+2025,Kazakhstan,general,0.0
+2025,Kenya,general,0.0
+2025,Kiribati,general,0.0
+2025,Kosovo,general,0.0
+2025,Kuwait,general,0.0
+2025,Kyrgyzstan,general,0.0
+2025,Laos,general,0.0
+2025,Latvia,general,0.0
+2025,Lebanon,general,0.0
+2025,Lesotho,general,0.0
+2025,Liberia,general,0.0
+2025,Libya,general,0.0
+2025,Liechtenstein,general,0.0
+2025,Lithuania,general,0.0
+2025,Luxembourg,general,0.0
+2025,Macau,general,0.0
+2025,Madagascar,general,0.0
+2025,Malawi,general,0.0
+2025,Malaysia,general,0.0
+2025,Maldives,general,0.0
+2025,Mali,general,0.0
+2025,Malta,general,0.0
+2025,Marshall Islands,general,0.0
+2025,Martinique,general,0.0
+2025,Mauritania,general,0.0
+2025,Mauritius,general,0.0
+2025,Mayotte,general,0.0
+2025,Mexico,general,0.0
+2025,Micronesia,general,0.0
+2025,Moldova,general,0.0
+2025,Monaco,general,0.0
+2025,Mongolia,general,0.0
+2025,Montenegro,general,0.0
+2025,Montserrat ,general,0.0
+2025,Morocco,general,0.0
+2025,Mozambique,general,0.0
+2025,Myanmar (Burma),general,0.0
+2025,Namibia,general,0.0
+2025,Nauru,general,0.0
+2025,Nepal,general,0.0
+2025,Netherlands,general,0.0
+2025,New Caledonia,general,0.0
+2025,New Zealand,general,0.0
+2025,Nicaragua,general,0.0
+2025,Niger,general,0.0
+2025,Nigeria,general,0.0
+2025,Niue,general,0.0
+2025,Norfolk Island,general,0.0
+2025,North Macedonia,general,0.0
+2025,Norway,general,0.0
+2025,Oman,general,0.0
+2025,Pakistan,general,0.0
+2025,Palau,general,0.0
+2025,Panama,general,0.0
+2025,Papua New Guinea,general,0.0
+2025,Paraguay,general,0.0
+2025,Peru,general,0.0
+2025,Philippines,general,0.0
+2025,Pitcairn Islands,general,0.0
+2025,Poland,general,0.0
+2025,Portugal,general,0.0
+2025,Qatar,general,0.0
+2025,Republic of the Congo,general,0.0
+2025,Reunion,general,0.0
+2025,Romania,general,0.0
+2025,Russia,general,0.0
+2025,Rwanda,general,0.0
+2025,Saint Helena,general,0.0
+2025,Saint Kitts and Nevis,general,0.0
+2025,Saint Lucia,general,0.0
+2025,Saint Pierre and Miquelon,general,0.0
+2025,Saint Vincent and the Grenadines,general,0.0
+2025,Samoa,general,0.0
+2025,San Marino,general,0.0
+2025,Saudi Arabia,general,0.0
+2025,Senegal,general,0.0
+2025,Serbia,general,0.0
+2025,Seychelles,general,0.0
+2025,Sierra Leone,general,0.0
+2025,Singapore,general,0.0
+2025,Sint Maarten,general,0.0
+2025,Slovakia,general,0.0
+2025,Slovenia,general,0.0
+2025,Solomon Islands,general,0.0
+2025,Somalia,general,0.0
+2025,South Africa,general,0.0
+2025,South Korea,general,0.0
+2025,South Sudan,general,0.0
+2025,Spain,general,0.0
+2025,Sri Lanka,general,0.0
+2025,Suriname,general,0.0
+2025,Svalbard and Jan Mayen,general,0.0
+2025,Sweden,general,0.0
+2025,Switzerland,general,0.0
+2025,Syria,general,0.0
+2025,São Tomé and Príncipe,general,0.0
+2025,Taiwan,general,0.0
+2025,Tajikistan,general,0.0
+2025,Tanzania,general,0.0
+2025,Thailand,general,0.0
+2025,Timor-Leste,general,0.0
+2025,Togo,general,0.0
+2025,Tokelau,general,0.0
+2025,Tonga,general,0.0
+2025,Trinidad and Tobago,general,0.0
+2025,Tunisia,general,0.0
+2025,Turkey,general,0.0
+2025,Turkmenistan,general,0.0
+2025,Turks and Caicos Islands,general,0.0
+2025,Tuvalu,general,0.0
+2025,Uganda,general,0.0
+2025,Ukraine,general,0.0
+2025,United Arab Emirates,general,0.0
+2025,United Kingdom,general,0.0
+2025,Uruguay,general,0.0
+2025,Uzbekistan,general,0.0
+2025,Vanuatu,general,0.0
+2025,Vatican City,general,0.0
+2025,Venezuela,general,0.0
+2025,Vietnam,general,0.0
+2025,Wallis and Futuna,general,0.0
+2025,West Bank,general,0.0
+2025,Yemen,general,0.0
+2025,Zambia,general,0.0
+2025,Zimbabwe,general,0.0

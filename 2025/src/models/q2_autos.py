@@ -11,13 +11,20 @@ import numpy as np
 import json
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass, field
+from datetime import datetime
 import logging
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
 import sys
 sys.path.append(str(Path(__file__).parents[1]))
-from utils.config import RESULTS_DIR, FIGURES_DIR, DATA_EXTERNAL
+from utils.config import (
+    RESULTS_DIR,
+    FIGURES_DIR,
+    DATA_PROCESSED,
+    RESULTS_LOGS,
+)
 from utils.data_loader import TariffDataLoader
 from utils.mapping import HSMapper
 
