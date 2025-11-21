@@ -18,7 +18,7 @@ from statsmodels.regression.linear_model import RegressionResultsWrapper
 
 import sys
 sys.path.append(str(Path(__file__).parents[1]))
-from utils.config import RESULTS_DIR, FIGURES_DIR, DATA_EXTERNAL
+from utils.config import RESULTS_DIR, FIGURES_DIR, DATA_EXTERNAL, DATA_PROCESSED
 from utils.data_loader import TariffDataLoader
 from utils.mapping import HSMapper
 
@@ -81,33 +81,40 @@ class SoybeanTradeModel:
         Returns:
             DataFrame with columns: year, exporter, import_value, import_quantity, etc.
         """
-        external_file = DATA_EXTERNAL / 'china_imports_soybeans.csv'
+        processed_file = DATA_PROCESSED / 'q1' / 'q1_0.csv'
         
-        if not external_file.exists():
-            logger.warning(f"External China imports file not found: {external_file}")
-            logger.info("Creating template file for manual data entry")
+        if processed_file.exists():
+            df = pd.read_csv(processed_file)
+            logger.info(f"Loaded {len(df)} records from standard Q1 processed data: {processed_file}")
+        else:
+            external_file = DATA_EXTERNAL / 'china_imports_soybeans.csv'
             
-            # Create a template
-            template = pd.DataFrame({
-                'year': [2020, 2020, 2020, 2021, 2021, 2021],
-                'exporter': ['US', 'Brazil', 'Argentina'] * 2,
-                'import_value_usd': [0, 0, 0, 0, 0, 0],
-                'import_quantity_tonnes': [0, 0, 0, 0, 0, 0],
-                'tariff_cn_on_exporter': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            })
-            template.to_csv(external_file, index=False)
-            logger.info(f"Template saved to {external_file} - please fill with actual data")
-            
-            return template
+            if not external_file.exists():
+                logger.warning(f"External China imports file not found: {external_file}")
+                logger.info("Creating template file for manual data entry")
+                
+                # Create a template
+                template = pd.DataFrame({
+                    'year': [2020, 2020, 2020, 2021, 2021, 2021],
+                    'exporter': ['US', 'Brazil', 'Argentina'] * 2,
+                    'import_value_usd': [0, 0, 0, 0, 0, 0],
+                    'import_quantity_tonnes': [0, 0, 0, 0, 0, 0],
+                    'tariff_cn_on_exporter': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                })
+                template.to_csv(external_file, index=False)
+                logger.info(f"Template saved to {external_file} - please fill with actual data")
+                
+                df = template
+            else:
+                df = pd.read_csv(external_file)
+                logger.info(f"Loaded {len(df)} records from Chinese imports data")
         
-        # Load actual data
-        df = pd.read_csv(external_file)
-        logger.info(f"Loaded {len(df)} records from Chinese imports data")
+        if 'unit_value' not in df.columns:
+            if 'unit_price_usd_per_ton' in df.columns:
+                df['unit_value'] = df['unit_price_usd_per_ton']
+            else:
+                df['unit_value'] = df['import_value_usd'] / df['import_quantity_tonnes']
         
-        # Compute unit value (price proxy)
-        df['unit_value'] = df['import_value_usd'] / df['import_quantity_tonnes']
-        
-        # Compute price with tariff
         df['price_with_tariff'] = df['unit_value'] * (1 + df['tariff_cn_on_exporter'])
         
         return df

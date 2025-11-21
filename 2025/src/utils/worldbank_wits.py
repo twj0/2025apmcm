@@ -51,18 +51,15 @@ def fetch_worldbank_indicator_to_csv(
     start_year: int = 2015,
     end_year: int = 2024,
     out_path: Path | str = Path("worldbank_indicator.csv"),
+    clean_output: bool = True,
 ) -> pd.DataFrame:
     """Fetch a World Bank indicator via `wbdata` and save as CSV.
 
     This is a thin wrapper around `wbdata.get_data` that:
     - Requests values for a given country and year window.
     - Converts the returned list-of-dicts into a DataFrame.
+    - Optionally cleans nested dictionary columns for better usability.
     - Writes it to CSV for inspection and downstream analysis.
-
-    Note:
-        The exact schema of the returned objects is controlled by `wbdata`
-        and the World Bank API. This helper does **not** enforce a specific
-        column layout; it simply materializes what `wbdata` returns.
 
     Args:
         indicator: World Bank indicator code, e.g. "TM.TAX.MANF.SM.AR.ZS".
@@ -70,6 +67,7 @@ def fetch_worldbank_indicator_to_csv(
         start_year: First year (inclusive).
         end_year: Last year (inclusive).
         out_path: Where to save the CSV.
+        clean_output: If True, extracts 'value'/'id' from nested dict columns.
 
     Returns:
         pandas.DataFrame of the fetched data.
@@ -103,6 +101,31 @@ def fetch_worldbank_indicator_to_csv(
         LOGGER.warning("World Bank API returned no data for given query.")
 
     df = pd.DataFrame(rows)
+    
+    # Clean nested dictionary columns if requested
+    if clean_output and not df.empty:
+        for col in df.columns:
+            # Check if column contains dict-like strings or actual dicts
+            sample = df[col].dropna().iloc[0] if not df[col].dropna().empty else None
+            if isinstance(sample, dict):
+                # Extract 'value' or 'id' if available
+                if 'value' in sample:
+                    df[f"{col}_name"] = df[col].apply(lambda x: x.get('value') if isinstance(x, dict) else x)
+                if 'id' in sample:
+                    df[f"{col}_id"] = df[col].apply(lambda x: x.get('id') if isinstance(x, dict) else x)
+                # Keep the most useful field and drop the dict column
+                if 'value' in sample:
+                    df[col] = df[f"{col}_name"]
+                    df.drop(f"{col}_name", axis=1, inplace=True, errors='ignore')
+            elif isinstance(sample, str) and sample.startswith("{'"):
+                # Handle dict strings (malformed output from wbdata)
+                LOGGER.warning(f"Column '{col}' contains dict strings, attempting to parse")
+                try:
+                    import ast
+                    df[col] = df[col].apply(lambda x: ast.literal_eval(x).get('value') if isinstance(x, str) and x.startswith("{'") else x)
+                except Exception as e:
+                    LOGGER.warning(f"Could not parse dict strings in column '{col}': {e}")
+    
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_path, index=False)

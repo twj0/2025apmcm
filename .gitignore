@@ -22,7 +22,7 @@ prompt
 *.json
 *.xlsx
 
-
+conversation
 2025tmpl
 QUICK_START.md
 PROJECT_COMPLETION_SUMMARY.md

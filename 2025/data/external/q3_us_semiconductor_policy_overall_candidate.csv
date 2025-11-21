@@ -1,0 +1,11 @@
+year,segment,us_output_index_billion_usd,world_output_index_billion_usd,us_export_value_usd_billion,us_import_value_usd_billion,us_tariff_on_chips_pct,subsidy_index,export_control_china_index
+2015,overall,60,335,43,43,0,0,0
+2016,overall,62,339,43,45,0,0,0
+2017,overall,65,412,45,50,0,0,1
+2018,overall,68,469,50,54,1.5,0,3
+2019,overall,75,412,46,54,2,0,5
+2020,overall,81,440,44,58,2,0,6
+2021,overall,89,556,50,65,2.5,0,6
+2022,overall,97,574,55,70,2.5,3,8
+2023,overall,97,527,53,65,2.8,7,9
+2024,overall,99,628,55,70,2.88,10,9
