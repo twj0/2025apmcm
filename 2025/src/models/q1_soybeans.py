@@ -9,6 +9,7 @@ affect soybean exports from the three major suppliers to China.
 import pandas as pd
 import numpy as np
 import json
+import pickle
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 import logging
@@ -474,11 +475,16 @@ class SoybeanMonthlyDataset:
         monthly['import_value'] = monthly['primaryValue']
         monthly['unit_price'] = monthly['import_value'] / (monthly['import_quantity'] + 1e-6)
 
-        annual = pd.read_csv(self.annual_file)
-        tariff_lookup = annual[['year', 'exporter', 'tariff_cn_on_exporter']]
-        monthly = monthly.merge(tariff_lookup, on=['year', 'exporter'], how='left')
-
-        monthly['tariff_rate'] = monthly['tariff_cn_on_exporter']
+        # Prefer monthly tariff column if present; else fall back to annual lookup
+        if 'tariff_rate' in monthly.columns and 'tariff_cn_on_exporter' not in monthly.columns:
+            monthly['tariff_cn_on_exporter'] = monthly['tariff_rate']
+        else:
+            annual = pd.read_csv(self.annual_file)
+            tariff_lookup = annual[['year', 'exporter', 'tariff_cn_on_exporter']]
+            monthly = monthly.merge(tariff_lookup, on=['year', 'exporter'], how='left')
+            # ensure tariff_rate exists for downstream features
+            if 'tariff_rate' not in monthly.columns:
+                monthly['tariff_rate'] = monthly['tariff_cn_on_exporter']
         monthly = monthly.sort_values(['exporter', 'date']).reset_index(drop=True)
         monthly['total_value_by_month'] = monthly.groupby('date')['import_value'].transform('sum')
         monthly['market_share'] = monthly['import_value'] / (monthly['total_value_by_month'] + 1e-6)
@@ -786,6 +792,14 @@ class SoybeanLSTMPipeline:
         X_train, X_val = X[:split_idx], X[split_idx:]
         y_train, y_val = y[:split_idx], y[split_idx:]
 
+        # Set TF seed for reproducibility if available
+        try:
+            from utils.config import RANDOM_SEED
+            if tf is not None:
+                tf.random.set_seed(RANDOM_SEED)
+        except Exception:
+            pass
+
         self.model = SoybeanLSTMModel(
             input_shape=(self.config.window_size, len(self.processor.feature_columns)),
             output_steps=self.config.forecast_horizon,
@@ -991,6 +1005,25 @@ class SoybeanLSTMPipeline:
                     **stats,
                 })
             pd.DataFrame(residual_rows).to_csv(residuals_path, index=False)
+
+        # Persist model and scalers
+        try:
+            if self.model is not None and hasattr(self.model, 'model'):
+                try:
+                    self.model.model.save(output_dir / 'lstm_model.keras')
+                except Exception:
+                    self.model.model.save(output_dir / 'lstm_model.h5')
+        except Exception as exc:
+            logger.warning(f"Failed to save LSTM model: {exc}")
+        try:
+            if 'features' in self.processor.scalers:
+                with open(output_dir / 'scaler_features.pkl', 'wb') as f:
+                    pickle.dump(self.processor.scalers['features'], f)
+            if 'targets' in self.processor.scalers:
+                with open(output_dir / 'scaler_targets.pkl', 'wb') as f:
+                    pickle.dump(self.processor.scalers['targets'], f)
+        except Exception as exc:
+            logger.warning(f"Failed to save LSTM scalers: {exc}")
 
 
 def run_q1_analysis() -> None:

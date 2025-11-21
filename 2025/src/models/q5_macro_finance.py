@@ -25,14 +25,14 @@ from tensorflow import keras
 
 import sys
 sys.path.append(str(Path(__file__).parents[1]))
-from utils.config import RESULTS_DIR, FIGURES_DIR, DATA_EXTERNAL, DATA_PROCESSED
+from utils.config import RESULTS_DIR, FIGURES_DIR, DATA_EXTERNAL, DATA_PROCESSED, RANDOM_SEED
 from utils.data_loader import TariffDataLoader
 
 logger = logging.getLogger(__name__)
 
-# Set seeds for reproducibility
-np.random.seed(42)
-tf.random.set_seed(42)
+# Set seeds for reproducibility (use global project seed)
+np.random.seed(RANDOM_SEED)
+tf.random.set_seed(RANDOM_SEED)
 
 
 class MacroFinanceModel:
@@ -56,17 +56,40 @@ class MacroFinanceModel:
         """
         logger.info("Loading Q5 macro/financial data")
         
-        # Load tariff indices (from processed data or compute)
-        try:
-            tariff_indices = pd.read_parquet(DATA_PROCESSED / 'tariff_indices.parquet')
-            logger.info("Loaded tariff indices")
-        except FileNotFoundError:
-            # Create placeholder
-            logger.warning("Tariff indices not found, creating placeholder")
-            tariff_indices = pd.DataFrame({
-                'year': range(2015, 2026),
-                'tariff_index_total': np.random.uniform(2.0, 8.0, 11),
-            })
+        # Load tariff indices (prefer processed CSVs; fallback to parquet or placeholder)
+        # Priority: q5_tariff_indices_calibrated.csv -> q5_tariff_indices_policy.csv -> parquet -> placeholder
+        tariff_indices = None
+        cal_csv = DATA_PROCESSED / 'q5' / 'q5_tariff_indices_calibrated.csv'
+        pol_csv = DATA_PROCESSED / 'q5' / 'q5_tariff_indices_policy.csv'
+        if cal_csv.exists():
+            try:
+                tdf = pd.read_csv(cal_csv)
+                if 'tariff_index' in tdf.columns:
+                    tdf = tdf.rename(columns={'tariff_index': 'tariff_index_total'})
+                tariff_indices = tdf
+                logger.info("Loaded tariff indices from calibrated CSV")
+            except Exception as e:
+                logger.warning(f"Failed to read calibrated tariff indices: {e}")
+        if tariff_indices is None and pol_csv.exists():
+            try:
+                tdf = pd.read_csv(pol_csv)
+                if 'tariff_index' in tdf.columns:
+                    tdf = tdf.rename(columns={'tariff_index': 'tariff_index_total'})
+                tariff_indices = tdf
+                logger.info("Loaded tariff indices from policy CSV")
+            except Exception as e:
+                logger.warning(f"Failed to read policy tariff indices: {e}")
+        if tariff_indices is None:
+            try:
+                tdf = pd.read_parquet(DATA_PROCESSED / 'tariff_indices.parquet')
+                tariff_indices = tdf
+                logger.info("Loaded tariff indices from parquet")
+            except Exception:
+                logger.warning("Tariff indices not found, creating placeholder")
+                tariff_indices = pd.DataFrame({
+                    'year': range(2015, 2026),
+                    'tariff_index_total': np.random.uniform(2.0, 8.0, 11),
+                })
         
         # Load external macro data
         macro_file = DATA_EXTERNAL / 'us_macro.csv'
@@ -555,6 +578,16 @@ class MacroFinanceModel:
         except Exception as e:
             logger.error(f"Error in VAR-LSTM: {e}")
             return {}
+        finally:
+            # Persist VAR-LSTM model when available
+            try:
+                if 'var_lstm' in self.models and hasattr(self.models['var_lstm'], 'save'):
+                    try:
+                        self.models['var_lstm'].save(self.q5_ml_dir / 'var_lstm_model.keras')
+                    except Exception:
+                        self.models['var_lstm'].save(self.q5_ml_dir / 'var_lstm_model.h5')
+            except Exception as exc:
+                logger.warning(f"Failed to save VAR-LSTM model: {exc}")
 
     def train_reshoring_ml(self, ts_df: Optional[pd.DataFrame] = None) -> Dict:
         """Train ML models for reshoring prediction with feature importance."""
@@ -730,6 +763,17 @@ def run_q5_analysis() -> None:
     logger.info("\n--- ML Hybrid Models ---")
     model.train_var_lstm_hybrid()
     model.train_reshoring_ml()
+
+    # Step 3b: PyTorch Transformer (optional, preferred for Transformer part)
+    try:
+        try:
+            from .q5_transformer_torch import run_q5_torch_transformer  # type: ignore
+        except Exception:
+            from q5_transformer_torch import run_q5_torch_transformer  # type: ignore
+        logger.info("\n--- PyTorch Transformer (Q5) ---")
+        _ = run_q5_torch_transformer(RESULTS_DIR / 'q5' / 'transformer', model.time_series)
+    except Exception as exc:
+        logger.warning(f"Q5 Torch Transformer unavailable or failed: {exc}")
 
     # Step 4: Model comparison
     logger.info("\n--- Model Comparison ---")

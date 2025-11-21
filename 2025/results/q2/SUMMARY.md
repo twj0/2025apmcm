@@ -1,6 +1,6 @@
 # Q2 Results Summary
 
-**Generated:** 2025-11-21 17:57:52
+**Generated:** 2025-11-21 21:53:49
 
 ## Methods Overview
 
@@ -14,9 +14,11 @@
 
 ### Marl
 - **Directory:** `D:\Mathematical Modeling\2025APMCM\SPEC\2025\results\q2\marl`
-- **Files:** 1
+- **Files:** 3
 
+  - `drl_summary.json`
   - `nash_equilibrium.json`
+  - `selfplay_summary.json`
 
 ### Transformer
 - **Directory:** `D:\Mathematical Modeling\2025APMCM\SPEC\2025\results\q2\transformer`
@@ -35,8 +37,9 @@ q2/
 │   └── ...
 ├── marl/
 │   ├── analysis_report.md
-│   ├── nash_equilibrium.json
-│   └── payoff_matrix.csv
+│   ├── drl_jp_actor.pt
+│   └── drl_summary.json
+│   └── ...
 ├── transformer/
 │   ├── analysis_report.md
 │   ├── predictions.csv

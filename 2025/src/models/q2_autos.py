@@ -19,6 +19,7 @@ import numpy as np
 from pathlib import Path
 import logging
 import json
+import pickle
 from datetime import datetime
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import MinMaxScaler
@@ -213,6 +214,25 @@ class AutoTradeModel:
         self.results_marl.mkdir(parents=True, exist_ok=True)
         self.results_transformer.mkdir(parents=True, exist_ok=True)
         logger.info(f"Results directories created: {self.results_base}")
+    
+    def run_marl_environment(self) -> Dict[str, Any]:
+        """Run MARL environment self-play training and save results.
+        Falls back gracefully if module unavailable.
+        """
+        try:
+            # Prefer relative import when package available
+            try:
+                from .q2_marl_env import run_marl_env_training  # type: ignore
+            except Exception:
+                try:
+                    from models.q2_marl_env import run_marl_env_training  # type: ignore
+                except Exception:
+                    from q2_marl_env import run_marl_env_training  # type: ignore
+            results = run_marl_env_training(self.results_marl)
+            return results
+        except Exception as exc:
+            logger.warning(f"MARL environment training not available: {exc}")
+            return {}
     
     def load_q2_data(self) -> pd.DataFrame:
         """Load and prepare data for Q2 analysis.
@@ -683,85 +703,85 @@ class AutoTradeModel:
         
         return nash_results
     
-    def prepare_transformer_data(self, panel_df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray, Dict]:
-        """Prepare time series-like features for Transformer model.
-        
-        Args:
-            panel_df: Panel data with imports by partner and year
-            
+    def prepare_transformer_sequence_data(self, panel_df: pd.DataFrame, seq_len: int = 12) -> Tuple[np.ndarray, np.ndarray, Dict]:
+        """Prepare true time-series sequences grouped by partner for Transformer.
+
+        Builds sliding windows of length seq_len from yearly auto_import_charges
+        per partner. Uses a single feature (scaled import charges) for stability.
+
         Returns:
-            Tuple of (X_scaled, y_scaled, metadata)
+            X: (n_samples, seq_len, 1)
+            y: (n_samples,)
+            metadata: dict with scaler, partners, seq_len
         """
         if tf is None:
             logger.error("TensorFlow not available for Transformer model")
             return np.array([]), np.array([]), {}
-        
-        logger.info("Preparing data for Transformer model")
-        
-        # Focus on major partners by import charges
+
+        logger.info("Preparing sequence data for Transformer model")
+
+        # Focus on top partners by cumulative charges
         major_partners = (
             panel_df.groupby('partner_country')['auto_import_charges']
-            .sum().nlargest(5).index
+            .sum().nlargest(5).index.tolist()
         )
         df = panel_df[panel_df['partner_country'].isin(major_partners)].copy()
-        
-        # Sort and index features
         df = df.sort_values(['partner_country', 'year']).reset_index(drop=True)
-        df['year_idx'] = df['year'] - df['year'].min()
-        df['partner_encoded'] = pd.Categorical(df['partner_country']).codes
-        
-        # Lag and moving average features
-        df['import_lag1'] = df.groupby('partner_country')['auto_import_charges'].shift(1)
-        df['import_lag2'] = df.groupby('partner_country')['auto_import_charges'].shift(2)
-        df['import_ma3'] = df.groupby('partner_country')['auto_import_charges'].transform(lambda x: x.rolling(3).mean())
-        
-        df = df.dropna()
-        
-        if len(df) < 10:
-            logger.warning("Insufficient data for Transformer model")
-            return np.array([]), np.array([]), {}
-        
-        feature_cols = ['year_idx', 'partner_encoded', 'import_lag1', 'import_lag2', 'import_ma3']
-        X = df[feature_cols].values
-        y = df['auto_import_charges'].values
-        
-        scaler_X = MinMaxScaler()
+
+        # Global scaler across partners (keeps relative scale comparable)
         scaler_y = MinMaxScaler()
-        X_scaled = scaler_X.fit_transform(X)
-        y_scaled = scaler_y.fit_transform(y.reshape(-1, 1)).flatten()
-        
+        scaler_y.fit(df[['auto_import_charges']].values)
+
+        X_list: List[np.ndarray] = []
+        y_list: List[float] = []
+
+        for partner, g in df.groupby('partner_country'):
+            series = g['auto_import_charges'].astype(float).values.reshape(-1, 1)
+            series_scaled = scaler_y.transform(series).flatten()
+            if len(series_scaled) <= seq_len:
+                continue
+            for i in range(seq_len, len(series_scaled)):
+                window = series_scaled[i - seq_len:i]
+                target = series_scaled[i]
+                X_list.append(window.reshape(seq_len, 1))
+                y_list.append(target)
+
+        if not X_list:
+            logger.warning("Insufficient sequence data for Transformer model")
+            return np.array([]), np.array([]), {}
+
+        X = np.stack(X_list).astype('float32')
+        y = np.array(y_list).astype('float32')
+
         metadata = {
-            'scaler_X': scaler_X,
             'scaler_y': scaler_y,
-            'feature_cols': feature_cols,
-            'partners': list(major_partners)
+            'partners': major_partners,
+            'seq_len': seq_len,
         }
-        
-        return X_scaled, y_scaled, metadata
+        return X, y, metadata
     
-    def build_transformer_model(self, input_dim: int) -> Any:
-        """Build a small Transformer-like regression model in Keras."""
+    def build_transformer_model(self, input_shape: Tuple[int, int]) -> Any:
+        """Build a small Transformer-like sequence regression model in Keras."""
         if tf is None:
             raise ImportError("TensorFlow required for Transformer model")
-        
-        inputs = layers.Input(shape=(input_dim,))
-        # add a trivial sequence axis for attention
-        x = layers.Reshape((1, input_dim))(inputs)
-        attn = layers.MultiHeadAttention(num_heads=2, key_dim=max(1, input_dim // 2))(x, x)
-        x = layers.Add()([x, attn])
-        x = layers.LayerNormalization()(x)
-        
-        ff = layers.Dense(32, activation='relu')(x)
-        ff = layers.Dropout(0.2)(ff)
-        ff = layers.Dense(input_dim)(ff)
-        x = layers.Add()([x, ff])
-        x = layers.LayerNormalization()(x)
-        
+        # Input: (seq_len, n_features)
+        inputs = layers.Input(shape=input_shape)
+        x = inputs
+        # Positional encoding (simple learnable Dense over positions not used to avoid extra state)
+        # Transformer encoder block x2
+        for _ in range(2):
+            attn_out = layers.MultiHeadAttention(num_heads=2, key_dim=max(1, input_shape[-1]))(x, x)
+            x = layers.Add()([x, attn_out])
+            x = layers.LayerNormalization()(x)
+            ff = layers.Dense(32, activation='relu')(x)
+            ff = layers.Dropout(0.2)(ff)
+            ff = layers.Dense(input_shape[-1])(ff)
+            x = layers.Add()([x, ff])
+            x = layers.LayerNormalization()(x)
         x = layers.Flatten()(x)
-        x = layers.Dense(16, activation='relu')(x)
+        x = layers.Dense(32, activation='relu')(x)
         x = layers.Dropout(0.2)(x)
         outputs = layers.Dense(1)(x)
-        
         model = models.Model(inputs=inputs, outputs=outputs)
         model.compile(optimizer='adam', loss='mse', metrics=['mae'])
         return model
@@ -772,21 +792,27 @@ class AutoTradeModel:
             logger.warning("TensorFlow not available, skipping Transformer model")
             return {}
         
+        # Set TF seed for reproducibility
+        try:
+            from utils.config import RANDOM_SEED
+            tf.random.set_seed(RANDOM_SEED)
+        except Exception:
+            pass
+
         if panel_df is None:
             panel_df = self.data
         if panel_df is None or len(panel_df) < 20:
             logger.error("Insufficient data for Transformer training")
             return {}
         
-        X, y, metadata = self.prepare_transformer_data(panel_df)
+        # Build true sequences
+        X, y, metadata = self.prepare_transformer_sequence_data(panel_df, seq_len=12)
         if len(X) == 0:
             return {}
         
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, shuffle=False
-        )
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
         
-        model = self.build_transformer_model(X.shape[1])
+        model = self.build_transformer_model((X.shape[1], X.shape[2]))
         early_stop = callbacks.EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
         reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5)
         
@@ -842,6 +868,24 @@ class AutoTradeModel:
             'error_pct': (y_test_orig - y_pred_orig) / (np.maximum(y_test_orig, 1e-6)) * 100,
         })
         pred_df.to_csv(self.results_transformer / 'predictions.csv', index=False)
+
+        # Persist model and scaler artifacts
+        try:
+            model.save(self.results_transformer / 'transformer_model.keras')
+        except Exception:
+            # Fallback to H5 if keras format not available
+            model.save(self.results_transformer / 'transformer_model.h5')
+        try:
+            with open(self.results_transformer / 'scaler_y.pkl', 'wb') as f:
+                pickle.dump(metadata['scaler_y'], f)
+            meta_save = {
+                'seq_len': metadata.get('seq_len', 12),
+                'partners': metadata.get('partners', []),
+            }
+            with open(self.results_transformer / 'model_meta.json', 'w', encoding='utf-8') as f:
+                json.dump(meta_save, f, indent=2, ensure_ascii=False)
+        except Exception as exc:
+            logger.warning(f"Failed to persist scaler/model metadata: {exc}")
         
         md_lines = [
             "# Q2 Transformer Model Results",
@@ -953,8 +997,35 @@ def run_q2_analysis(use_transformer: bool = True) -> None:
     # Step 3: Simulate scenarios (econometric)
     import_df, industry_df = model.simulate_japan_response_scenarios()
     
-    # Step 4: MARL game-theoretic analysis
-    logger.info("\n[MARL ANALYSIS]")
+    # Step 4: MARL environment self-play (preferred) and Nash (legacy)
+    logger.info("\n[MARL ENVIRONMENT SELF-PLAY]")
+    env_results = model.run_marl_environment()
+    if env_results:
+        logger.info(
+            f"Self-play result: US tariff={env_results.get('final_us_tariff', 0):.1%}, "
+            f"JP relocation={env_results.get('final_jp_relocation', 0):.1%}"
+        )
+    # Continuous-action DRL (SAC) training (optional)
+    try:
+        try:
+            from .q2_marl_drl import run_marl_drl_training  # type: ignore
+        except Exception:
+            try:
+                from models.q2_marl_drl import run_marl_drl_training  # type: ignore
+            except Exception:
+                from q2_marl_drl import run_marl_drl_training  # type: ignore
+        logger.info("\n[MARL DRL - SAC TRAINING]")
+        drl_summary = run_marl_drl_training(model.results_marl)
+        if drl_summary:
+            logger.info(
+                "SAC training done: episodes=%s, final_us_return=%.2f, final_jp_return=%.2f",
+                drl_summary.get("episodes"),
+                drl_summary.get("final_us_return", float("nan")),
+                drl_summary.get("final_jp_return", float("nan")),
+            )
+    except Exception as exc:
+        logger.warning(f"MARL DRL training unavailable or failed: {exc}")
+    logger.info("\n[MARL ANALYSIS - NASH GRID]")
     nash_results = model.run_marl_analysis(industry_df, import_df)
     logger.info(f"Nash Equilibria found: {nash_results['n_equilibria']}")
     

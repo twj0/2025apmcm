@@ -1,6 +1,6 @@
 # Q4 Results Summary
 
-**Generated:** 2025-11-21 17:57:52
+**Generated:** 2025-11-21 21:53:49
 
 ## Methods Overview
 
@@ -14,8 +14,11 @@
 
 ### Ml
 - **Directory:** `D:\Mathematical Modeling\2025APMCM\SPEC\2025\results\q4\ml`
-- **Files:** 0
+- **Files:** 3
 
+  - `arima_model_metrics.json`
+  - `gb_model_metrics.json`
+  - `model_comparison.json`
 
 ## Data Structure
 
@@ -27,6 +30,10 @@ q4/
 │   └── revenue_summary.json
 │   └── ...
 ├── ml/
+│   ├── arima_model_metrics.json
+│   ├── combined_forecasts.csv
+│   └── gb_model_metrics.json
+│   └── ...
 ```
 
 ## Usage

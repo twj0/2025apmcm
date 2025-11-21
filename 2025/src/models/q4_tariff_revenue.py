@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore')
 
 import sys
 sys.path.append(str(Path(__file__).parents[1]))
-from utils.config import RESULTS_DIR, FIGURES_DIR, DATA_EXTERNAL
+from utils.config import RESULTS_DIR, FIGURES_DIR, DATA_EXTERNAL, DATA_PROCESSED
 from utils.data_loader import TariffDataLoader
 
 logger = logging.getLogger(__name__)
@@ -54,27 +54,36 @@ class TariffRevenueModel:
         """
         logger.info("Loading Q4 tariff revenue data")
         
-        # Load imports with duty collected
+        # Prefer processed annual revenue panel if available
+        processed_panel = DATA_PROCESSED / 'q4' / 'q4_0_tariff_revenue_panel.csv'
+        if processed_panel.exists():
+            try:
+                df = pd.read_csv(processed_panel)
+                # Ensure required columns exist and rename for internal compatibility
+                if 'year' in df.columns and 'total_tariff_revenue_usd' in df.columns:
+                    panel = df.copy()
+                    panel = panel.sort_values('year').reset_index(drop=True)
+                    panel.rename(columns={'total_tariff_revenue_usd': 'total_revenue'}, inplace=True)
+                    # Coerce numeric types
+                    panel['year'] = panel['year'].astype(int)
+                    panel['total_revenue'] = panel['total_revenue'].astype(float)
+                    self.panel_data = panel
+                    logger.info(f"Loaded processed revenue panel with {len(panel)} rows (years {panel['year'].min()}-{panel['year'].max()})")
+                    return panel
+            except Exception as e:
+                logger.warning(f"Failed to read processed Q4 panel, falling back to raw imports: {e}")
+        
+        # Fallback: aggregate from raw imports with duty collected
         imports = self.loader.load_imports()
+        revenue_panel = imports.groupby('year').agg({'duty_collected': 'sum'}).reset_index()
+        revenue_panel.rename(columns={'duty_collected': 'total_revenue'}, inplace=True)
+        revenue_panel = revenue_panel.sort_values('year').reset_index(drop=True)
         
-        # Aggregate to year level (can also do by sector/partner)
-        revenue_panel = imports.groupby('year').agg({
-            'duty_collected': 'sum',
-        }).reset_index()
-        
-        revenue_panel.rename(columns={
-            'duty_collected': 'total_revenue'
-        }, inplace=True)
-        
-        # Note: effective tariff requires import value, which we need to add
-        # For now, work with what we have
-        
-        logger.info(f"Loaded {len(revenue_panel)} years of revenue data")
+        logger.info(f"Loaded {len(revenue_panel)} years of revenue data from raw imports")
         logger.info(f"Years: {revenue_panel['year'].tolist()}")
         logger.info(f"Total revenue range: {revenue_panel['total_revenue'].min():.0f} - {revenue_panel['total_revenue'].max():.0f}")
         
         self.panel_data = revenue_panel
-        
         return revenue_panel
     
     def estimate_static_revenue_model(
@@ -102,30 +111,42 @@ class TariffRevenueModel:
         
         panel_df = panel_df.copy()
         
-        # Load average tariff by year from external configuration
-        avg_tariff_file = DATA_EXTERNAL / 'q4_avg_tariff_by_year.csv'
-        if not avg_tariff_file.exists():
-            logger.warning(f"Average tariff config not found: {avg_tariff_file}")
-            template = panel_df[['year']].drop_duplicates().sort_values('year')
-            template['avg_tariff'] = np.nan
-            template.to_csv(avg_tariff_file, index=False)
-            logger.warning(
-                "Created template q4_avg_tariff_by_year.csv. "
-                "Please fill 'avg_tariff' for each year before re-running."
-            )
-            # Cannot estimate model without tariff data
-            return {}
-        
-        try:
-            avg_df = pd.read_csv(avg_tariff_file)
-        except Exception as e:
-            logger.error(f"Error reading average tariff config: {e}")
-            return {}
-        
-        if 'year' not in avg_df.columns or 'avg_tariff' not in avg_df.columns:
-            logger.error("q4_avg_tariff_by_year.csv must contain 'year' and 'avg_tariff' columns")
-            return {}
-        
+        # Prefer processed revenue panel for average tariff by year; fallback to external CSV
+        processed_panel = DATA_PROCESSED / 'q4' / 'q4_0_tariff_revenue_panel.csv'
+        avg_df: Optional[pd.DataFrame] = None
+        if processed_panel.exists():
+            try:
+                tmp = pd.read_csv(processed_panel)
+                if 'year' in tmp.columns and 'effective_tariff_rate' in tmp.columns:
+                    avg_df = tmp[['year', 'effective_tariff_rate']].dropna().copy()
+                    # Normalize to proportion if provided in percent
+                    avg_df.rename(columns={'effective_tariff_rate': 'avg_tariff'}, inplace=True)
+                    if avg_df['avg_tariff'].max() > 1.0:
+                        avg_df['avg_tariff'] = avg_df['avg_tariff'] / 100.0
+            except Exception as e:
+                logger.warning(f"Failed reading processed revenue panel for avg tariff: {e}")
+
+        if avg_df is None:
+            avg_tariff_file = DATA_EXTERNAL / 'q4_avg_tariff_by_year.csv'
+            if not avg_tariff_file.exists():
+                logger.warning(f"Average tariff config not found: {avg_tariff_file}")
+                template = panel_df[['year']].drop_duplicates().sort_values('year')
+                template['avg_tariff'] = np.nan
+                template.to_csv(avg_tariff_file, index=False)
+                logger.warning(
+                    "Created template q4_avg_tariff_by_year.csv. "
+                    "Please fill 'avg_tariff' for each year before re-running."
+                )
+                return {}
+            try:
+                avg_df = pd.read_csv(avg_tariff_file)
+            except Exception as e:
+                logger.error(f"Error reading average tariff config: {e}")
+                return {}
+            if 'year' not in avg_df.columns or 'avg_tariff' not in avg_df.columns:
+                logger.error("q4_avg_tariff_by_year.csv must contain 'year' and 'avg_tariff' columns")
+                return {}
+
         panel_df = panel_df.merge(avg_df[['year', 'avg_tariff']], on='year', how='left')
         panel_df = panel_df.dropna(subset=['avg_tariff'])
         
@@ -194,7 +215,40 @@ class TariffRevenueModel:
         """
         logger.info("Estimating dynamic import response")
         
-        # Read dynamic elasticity parameters from external JSON
+        # Prefer estimating from processed revenue panel; fallback to external JSON
+        processed_panel = DATA_PROCESSED / 'q4' / 'q4_0_tariff_revenue_panel.csv'
+        if processed_panel.exists():
+            try:
+                df = pd.read_csv(processed_panel).sort_values('year')
+                # Use total imports and effective tariff to estimate simple dynamics
+                if {'total_imports_usd', 'effective_tariff_rate'}.issubset(df.columns):
+                    tau = df['effective_tariff_rate'].astype(float).copy()
+                    if tau.max() > 1.0:
+                        tau = tau / 100.0
+                    m = df['total_imports_usd'].astype(float).replace(0, np.nan)
+                    dlog_m = np.log(m).diff()
+                    dtau = tau.diff()
+                    dtau_l1 = dtau.shift(1)
+                    reg = pd.DataFrame({'dlog_m': dlog_m, 'dtau': dtau, 'dtau_l1': dtau_l1}).dropna()
+                    if len(reg) >= 5:
+                        X = sm.add_constant(reg[['dtau', 'dtau_l1']])
+                        model = sm.OLS(reg['dlog_m'], X).fit()
+                        phi1 = float(model.params.get('dtau', 0.0))
+                        phi2 = float(model.params.get('dtau_l1', 0.0))
+                        params = {
+                            'short_run_elasticity': phi1,
+                            'medium_run_elasticity': phi1 + phi2,
+                            'adjustment_speed': 0.3,
+                        }
+                        with open(self.econometric_dir / 'dynamic_import.json', 'w') as f:
+                            json.dump(params, f, indent=2)
+                        with open(RESULTS_DIR / 'q4_dynamic_import.json', 'w') as f:
+                            json.dump(params, f, indent=2)
+                        return params
+            except Exception as e:
+                logger.warning(f"Failed to estimate dynamic import response from processed data: {e}")
+
+        # Fallback: read external JSON parameters
         params_file = DATA_EXTERNAL / 'q4_dynamic_import_params.json'
         if not params_file.exists():
             logger.warning(f"Dynamic import parameter file not found: {params_file}")
@@ -210,29 +264,21 @@ class TariffRevenueModel:
                 "Please fill numeric values before relying on dynamic effects."
             )
             return {}
-        
         try:
             with open(params_file, 'r') as f:
                 params = json.load(f)
         except Exception as e:
             logger.error(f"Error reading dynamic import parameters: {e}")
             return {}
-        
-        # Basic validation
         required_keys = ['short_run_elasticity', 'medium_run_elasticity', 'adjustment_speed']
         for k in required_keys:
             if k not in params or params[k] is None:
                 logger.error(f"Dynamic import parameter '{k}' is missing or None")
                 return {}
-        
-        # Save to econometric directory
         with open(self.econometric_dir / 'dynamic_import.json', 'w') as f:
             json.dump(params, f, indent=2)
-
-        # Also save to old location for compatibility
         with open(RESULTS_DIR / 'q4_dynamic_import.json', 'w') as f:
             json.dump(params, f, indent=2)
-
         return params
     
     def simulate_second_term_revenue(
@@ -253,10 +299,36 @@ class TariffRevenueModel:
         """
         logger.info("Simulating second-term revenue")
         
-        # Load tariff scenarios and baseline import value from external JSON
-        scenarios_file = DATA_EXTERNAL / 'q4_tariff_scenarios.json'
-        if tariff_scenarios is None:
-            if not scenarios_file.exists():
+        # Load tariff scenarios: prefer processed CSV, fallback to external JSON
+        scenarios_csv = DATA_PROCESSED / 'q4' / 'q4_1_tariff_scenarios.csv'
+        if tariff_scenarios is None and scenarios_csv.exists():
+            try:
+                csv = pd.read_csv(scenarios_csv)
+                if {'year', 'scenario', 'avg_tariff_rate'}.issubset(csv.columns):
+                    years = sorted(csv['year'].unique().tolist())
+                    tariff_scenarios = {}
+                    for name, grp in csv.groupby('scenario'):
+                        series = grp.sort_values('year')['avg_tariff_rate'].tolist()
+                        tariff_scenarios[name] = series
+                    # Derive base_import_value from processed revenue panel if available
+                    base_import_value = None
+                    processed_panel = DATA_PROCESSED / 'q4' / 'q4_0_tariff_revenue_panel.csv'
+                    if processed_panel.exists():
+                        try:
+                            rp = pd.read_csv(processed_panel).sort_values('year')
+                            if 'total_imports_usd' in rp.columns:
+                                base_import_value = float(rp['total_imports_usd'].iloc[-1])
+                        except Exception:
+                            base_import_value = None
+                else:
+                    years = None
+            except Exception as e:
+                logger.warning(f"Failed to read processed scenarios CSV: {e}")
+                years = None
+
+        if tariff_scenarios is None or not tariff_scenarios:
+            scenarios_file = DATA_EXTERNAL / 'q4_tariff_scenarios.json'
+            if tariff_scenarios is None and not scenarios_file.exists():
                 logger.warning(f"Tariff scenarios file not found: {scenarios_file}")
                 template = {
                     'base_import_value': None,
@@ -273,21 +345,20 @@ class TariffRevenueModel:
                     "Please fill base_import_value and tariff paths before simulation."
                 )
                 return pd.DataFrame()
-            
-            try:
-                with open(scenarios_file, 'r') as f:
-                    config = json.load(f)
-            except Exception as e:
-                logger.error(f"Error reading tariff scenarios: {e}")
-                return pd.DataFrame()
-            
-            base_import_value = config.get('base_import_value')
-            years = config.get('years')
-            tariff_scenarios = config.get('scenarios', {})
-        else:
-            # Use provided scenarios and default years if necessary
-            years = [2025 + i for i in range(len(next(iter(tariff_scenarios.values()))))]
-            base_import_value = None
+            if tariff_scenarios is None:
+                try:
+                    with open(scenarios_file, 'r') as f:
+                        config = json.load(f)
+                except Exception as e:
+                    logger.error(f"Error reading tariff scenarios: {e}")
+                    return pd.DataFrame()
+                base_import_value = config.get('base_import_value')
+                years = config.get('years')
+                tariff_scenarios = config.get('scenarios', {})
+            else:
+                # Provided dict
+                years = [2025 + i for i in range(len(next(iter(tariff_scenarios.values()))))]
+                base_import_value = None
         
         if base_import_value is None:
             logger.error("base_import_value must be specified in q4_tariff_scenarios.json")
@@ -337,9 +408,11 @@ class TariffRevenueModel:
         # Compute cumulative revenue difference for baseline vs reciprocal_tariff if both present
         scenario_names = results_df['scenario'].unique().tolist()
         summary = {}
-        if 'baseline' in scenario_names and 'reciprocal_tariff' in scenario_names:
+        # Support both 'reciprocal_tariff' and 'reciprocal' naming
+        policy_name = 'reciprocal_tariff' if 'reciprocal_tariff' in scenario_names else ('reciprocal' if 'reciprocal' in scenario_names else None)
+        if 'baseline' in scenario_names and policy_name is not None:
             baseline_revenue = results_df[results_df['scenario'] == 'baseline']['revenue'].sum()
-            policy_revenue = results_df[results_df['scenario'] == 'reciprocal_tariff']['revenue'].sum()
+            policy_revenue = results_df[results_df['scenario'] == policy_name]['revenue'].sum()
             net_revenue_gain = policy_revenue - baseline_revenue
             
             logger.info(f"Baseline cumulative revenue: ${baseline_revenue/1e9:.1f}B")
@@ -398,13 +471,25 @@ class TariffRevenueModel:
 
         logger.info("Training ML models for revenue prediction")
 
-        # Load tariff data
-        avg_tariff_file = DATA_EXTERNAL / 'q4_avg_tariff_by_year.csv'
-        if not avg_tariff_file.exists():
-            logger.error("Average tariff data required for ML training")
-            return {}
-
-        avg_df = pd.read_csv(avg_tariff_file)
+        # Load tariff data: prefer processed revenue panel for avg_tariff
+        processed_panel = DATA_PROCESSED / 'q4' / 'q4_0_tariff_revenue_panel.csv'
+        avg_df: Optional[pd.DataFrame] = None
+        if processed_panel.exists():
+            try:
+                tmp = pd.read_csv(processed_panel)
+                if 'year' in tmp.columns and 'effective_tariff_rate' in tmp.columns:
+                    avg_df = tmp[['year', 'effective_tariff_rate']].dropna().copy()
+                    avg_df.rename(columns={'effective_tariff_rate': 'avg_tariff'}, inplace=True)
+                    if avg_df['avg_tariff'].max() > 1.0:
+                        avg_df['avg_tariff'] = avg_df['avg_tariff'] / 100.0
+            except Exception as e:
+                logger.warning(f"Failed reading processed revenue panel for avg tariff: {e}")
+        if avg_df is None:
+            avg_tariff_file = DATA_EXTERNAL / 'q4_avg_tariff_by_year.csv'
+            if not avg_tariff_file.exists():
+                logger.error("Average tariff data required for ML training")
+                return {}
+            avg_df = pd.read_csv(avg_tariff_file)
         panel_df = panel_df.merge(avg_df[['year', 'avg_tariff']], on='year', how='left')
         panel_df = panel_df.dropna(subset=['avg_tariff'])
 

@@ -4,30 +4,30 @@
 {
   "econometric_models": {
     "VAR": {
-      "aic": -Infinity,
-      "bic": -Infinity,
-      "lag_order": 2
+      "aic": null,
+      "bic": null,
+      "lag_order": null
     },
     "OLS_Regressions": {
       "num_models": 4,
-      "avg_rsquared": 0.24417356222019235
+      "avg_rsquared": 0.46532519302548503
     }
   },
   "ml_models": {
     "VAR_LSTM": {
-      "rmse": 2.9191309775276796e-07,
-      "training_samples": 6
+      "rmse": 3.9952278117546266e-07,
+      "training_samples": 5
     },
     "Reshoring_ML": {
       "random_forest": {
-        "rmse": 0.33090482015225947,
-        "mae": 0.30299999999999905,
-        "r2": -9.949799999999996
+        "rmse": 0.15250573759697833,
+        "mae": 0.14299999999999446,
+        "r2": -8.30319999999943
       },
       "gradient_boosting": {
-        "rmse": 0.3841010118453058,
-        "mae": 0.33228799006854626,
-        "r2": -13.75335873005888
+        "rmse": 0.1375118857702132,
+        "mae": 0.1280996437468902,
+        "r2": -6.56380749123212
       }
     }
   },

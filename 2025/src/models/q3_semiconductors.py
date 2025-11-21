@@ -35,7 +35,7 @@ warnings.filterwarnings('ignore')
 
 import sys
 sys.path.append(str(Path(__file__).parents[1]))
-from utils.config import RESULTS_DIR, FIGURES_DIR, DATA_EXTERNAL
+from utils.config import RESULTS_DIR, FIGURES_DIR, DATA_EXTERNAL, DATA_PROCESSED
 from utils.data_loader import TariffDataLoader
 from utils.mapping import HSMapper
 
@@ -240,18 +240,34 @@ class SemiconductorModel:
         else:
             template = pd.read_csv(output_file)
         
-        # Policy data
-        policy_file = DATA_EXTERNAL / 'us_chip_policies.csv'
-        if not policy_file.exists():
-            template_policy = pd.DataFrame({
-                'year': [2020, 2021, 2022, 2023, 2024],
-                'subsidy_index': [0, 0, 5, 10, 15],  # CHIPS Act starting 2022
-                'export_control_china': [0, 0, 1, 1, 1],  # Export controls from 2022
-            })
-            template_policy.to_csv(policy_file, index=False)
-            logger.info(f"Template saved to {policy_file}")
+        # Policy data: prefer processed dataset if available, else external fallback
+        processed_policy = DATA_PROCESSED / 'q3' / 'q3_1_chip_policies.csv'
+        if processed_policy.exists():
+            raw = pd.read_csv(processed_policy)
+            # Expected columns in processed: year, chips_subsidy_index, export_control_index, reshoring_incentive_index, rd_investment_billions, policy_uncertainty_index
+            col_map = {
+                'chips_subsidy_index': 'subsidy_index',
+                'export_control_index': 'export_control_china',
+            }
+            policy_cols = raw.columns.str.lower().str.strip()
+            raw.columns = policy_cols
+            # Apply mapping when columns present
+            for src, dst in col_map.items():
+                if src in raw.columns and dst not in raw.columns:
+                    raw[dst] = raw[src]
+            template_policy = raw.copy()
         else:
-            template_policy = pd.read_csv(policy_file)
+            policy_file = DATA_EXTERNAL / 'us_chip_policies.csv'
+            if not policy_file.exists():
+                template_policy = pd.DataFrame({
+                    'year': [2020, 2021, 2022, 2023, 2024],
+                    'subsidy_index': [0, 0, 5, 10, 15],  # CHIPS Act starting 2022
+                    'export_control_china': [0, 0, 1, 1, 1],  # Export controls from 2022
+                })
+                template_policy.to_csv(policy_file, index=False)
+                logger.info(f"Template saved to {policy_file}")
+            else:
+                template_policy = pd.read_csv(policy_file)
         
         self.output_data = template
         
@@ -351,7 +367,15 @@ class SemiconductorModel:
         df['ln_output'] = np.log(df['us_chip_output_billions'] + 1e-6)
         
         try:
-            formula = 'ln_output ~ subsidy_index + export_control_china + global_chip_demand_index'
+            # Build formula conditionally if additional covariates are available
+            base_terms = ['subsidy_index', 'export_control_china', 'global_chip_demand_index']
+            optional_terms = []
+            if 'rd_investment_billions' in df.columns:
+                optional_terms.append('rd_investment_billions')
+            if 'policy_uncertainty_index' in df.columns:
+                optional_terms.append('policy_uncertainty_index')
+            rhs = ' + '.join(base_terms + optional_terms)
+            formula = f'ln_output ~ {rhs}'
             model = smf.ols(formula, data=df).fit()
             
             self.models['output_response'] = model
@@ -624,6 +648,31 @@ class SemiconductorModel:
             Dictionary with GNN risk analysis results
         """
         logger.info("Running GNN supply chain risk analysis")
+        # Preferred 1: tri-type hetero GNN with multi-task heads + contrastive (torch-geometric)
+        try:
+            try:
+                from .q3_gnn_tri import run_q3_tri_gnn  # type: ignore
+            except Exception:
+                from q3_gnn_tri import run_q3_tri_gnn  # type: ignore
+            tri_summary = run_q3_tri_gnn(self.results_gnn, trade_data)
+            if tri_summary:
+                logger.info("Tri-type GNN completed; skipping other GNN fallbacks.")
+                return tri_summary
+        except Exception as exc:
+            logger.warning(f"Tri-type GNN unavailable or failed, trying full hetero GNN: {exc}")
+
+        # Preferred 2: full GNN with torch-geometric, if available
+        try:
+            try:
+                from .q3_gnn import run_q3_full_gnn  # type: ignore
+            except Exception:
+                from q3_gnn import run_q3_full_gnn  # type: ignore
+            summary = run_q3_full_gnn(self.results_gnn, trade_data)
+            if summary:
+                logger.info("Full GNN completed; skipping simplified graph fallback.")
+                return summary
+        except Exception as exc:
+            logger.warning(f"Full GNN unavailable or failed, falling back: {exc}")
         
         # Build supply chain graph from trade data
         # Aggregate by partner to get production shares

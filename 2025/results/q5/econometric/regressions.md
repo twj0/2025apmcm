@@ -3,32 +3,32 @@
 ```json
 {
   "gdp_growth": {
-    "rsquared": 0.0288363896491719,
-    "tariff_coef": 0.13057039441045334,
-    "tariff_pvalue": 0.7126218519797063,
-    "retaliation_coef": 0.06970185564342757,
-    "retaliation_pvalue": 0.7384937373332318
+    "rsquared": 0.1147377419772837,
+    "tariff_coef": -1.0950607835389912,
+    "tariff_pvalue": 0.444875400246467,
+    "retaliation_coef": 0.3082481410762754,
+    "retaliation_pvalue": 0.39863833494169565
   },
   "industrial_production": {
-    "rsquared": 0.6329480898555578,
-    "tariff_coef": 0.2826276626114731,
-    "tariff_pvalue": 0.4152239654239256,
-    "retaliation_coef": 0.7153022812263661,
-    "retaliation_pvalue": 0.0061370732735914705
+    "rsquared": 0.5535759448672835,
+    "tariff_coef": -1.295672851110945,
+    "tariff_pvalue": 0.3638781279786191,
+    "retaliation_coef": 0.9388359518830214,
+    "retaliation_pvalue": 0.027485006312316825
   },
   "manufacturing_va_share": {
-    "rsquared": 0.23220070750719002,
-    "tariff_coef": 0.020516333309683138,
-    "tariff_pvalue": 0.49108024093677927,
-    "retaliation_coef": 0.02434949823792909,
-    "retaliation_pvalue": 0.1843044279831666
+    "rsquared": 0.5784267221928965,
+    "tariff_coef": -0.21989643380297408,
+    "tariff_pvalue": 0.017875151503243616,
+    "retaliation_coef": 0.04011627270123097,
+    "retaliation_pvalue": 0.06237475525745347
   },
   "manufacturing_employment_share": {
-    "rsquared": 0.08270906186884963,
-    "tariff_coef": 0.01968814805522172,
-    "tariff_pvalue": 0.5375466569698628,
-    "retaliation_coef": 0.011265793887411668,
-    "retaliation_pvalue": 0.549220765304821
+    "rsquared": 0.6145603630644765,
+    "tariff_coef": -0.23317774024935645,
+    "tariff_pvalue": 0.014166727588369916,
+    "retaliation_coef": 0.02578239768547763,
+    "retaliation_pvalue": 0.19999106696162824
   }
 }
 ```

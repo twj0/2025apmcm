@@ -4,99 +4,105 @@
 {
   "models": {
     "random_forest": {
-      "rmse": 0.33090482015225947,
-      "mae": 0.30299999999999905,
-      "r2": -9.949799999999996
+      "rmse": 0.15250573759697833,
+      "mae": 0.14299999999999446,
+      "r2": -8.30319999999943
     },
     "gradient_boosting": {
-      "rmse": 0.3841010118453058,
-      "mae": 0.33228799006854626,
-      "r2": -13.75335873005888
+      "rmse": 0.1375118857702132,
+      "mae": 0.1280996437468902,
+      "r2": -6.56380749123212
     }
   },
   "feature_importance": {
     "random_forest": {
-      "tariff_index_total": 0.1326780589290155,
-      "gdp_growth": 0.05091585796258774,
-      "industrial_production": 0.040214035087973506,
-      "unemployment_rate": 0.06685496950124026,
-      "cpi": 0.002210526315803637,
-      "dollar_index": 0.11243036701803172,
-      "treasury_yield_10y": 0.10849452877973531,
-      "sp500_index": 0.01698099415223376,
-      "crypto_index": 0.0402820512821786,
-      "retaliation_index": 0.03120107526871016,
-      "tariff_index_total_lag1": 0.05684396497800366,
-      "tariff_index_total_lag2": 0.035412509251173264,
-      "retaliation_index_lag1": 0.002456140350970574,
-      "retaliation_index_lag2": 0.006564199873564925,
-      "gdp_growth_lag1": 0.1530221024843295,
-      "gdp_growth_lag2": 0.08529297385592033,
-      "tariff_retaliation_interaction": 0.05814564490852756
+      "tariff_index_total": 0.04118534482760971,
+      "china_tariff_index": 0.03943802521003569,
+      "row_tariff_index": 0.023801397596615034,
+      "china_tariff_coverage_pct": 0.14652367823322904,
+      "gdp_growth": 0.07141011260406756,
+      "industrial_production": 0.023144075257543667,
+      "unemployment_rate": 0.03853549695717789,
+      "cpi": 0.04513765705835421,
+      "dollar_index": 0.07103652165050495,
+      "treasury_yield_10y": 0.03884469696978795,
+      "sp500_index": 0.014195595479514177,
+      "crypto_index": 0.07085665496603434,
+      "retaliation_index": 0.012000000000136426,
+      "tariff_index_total_lag1": 0.0631601510871959,
+      "tariff_index_total_lag2": 0.005570557491429869,
+      "retaliation_index_lag1": 0.005669642857109285,
+      "retaliation_index_lag2": 0.0029268292683044504,
+      "gdp_growth_lag1": 0.17796763965882664,
+      "gdp_growth_lag2": 0.05946579804925608,
+      "tariff_retaliation_interaction": 0.04913012477726708
     },
     "gradient_boosting": {
-      "tariff_index_total": 0.5656821214800575,
-      "gdp_growth": 0.001380725265323069,
-      "industrial_production": 0.007834110215590457,
-      "unemployment_rate": 0.02780222698965407,
-      "cpi": 0.0,
-      "dollar_index": 0.051582441493891795,
-      "treasury_yield_10y": 0.021742337532354137,
-      "sp500_index": 0.003351037059799565,
-      "crypto_index": 0.0,
-      "retaliation_index": 0.0,
-      "tariff_index_total_lag1": 0.07292379218568372,
-      "tariff_index_total_lag2": 0.0,
-      "retaliation_index_lag1": 0.0,
-      "retaliation_index_lag2": 0.012360553328427766,
-      "gdp_growth_lag1": 0.2099589041609606,
-      "gdp_growth_lag2": 0.022974024198337804,
-      "tariff_retaliation_interaction": 0.0024077260899194957
+      "tariff_index_total": 0.01247007757975749,
+      "china_tariff_index": 0.023111465347020705,
+      "row_tariff_index": 0.037382544962121046,
+      "china_tariff_coverage_pct": 0.4321400548057099,
+      "gdp_growth": 0.005658300337333247,
+      "industrial_production": 0.001644927819174903,
+      "unemployment_rate": 0.02309479786354803,
+      "cpi": 0.01322756837807107,
+      "dollar_index": 0.02817653376417882,
+      "treasury_yield_10y": 0.012174584750582819,
+      "sp500_index": 0.014452719381458177,
+      "crypto_index": 0.0030138600734288135,
+      "retaliation_index": 0.0006438564001742741,
+      "tariff_index_total_lag1": 0.0,
+      "tariff_index_total_lag2": 0.019380424146794563,
+      "retaliation_index_lag1": 3.336580891397117e-05,
+      "retaliation_index_lag2": 0.0012394298961377237,
+      "gdp_growth_lag1": 0.35983472501207936,
+      "gdp_growth_lag2": 0.0066065845537715915,
+      "tariff_retaliation_interaction": 0.005714179119743505
     }
   },
   "top_features": {
     "random_forest": [
       {
         "feature": "gdp_growth_lag1",
-        "importance": 0.1530221024843295
+        "importance": 0.17796763965882664
       },
       {
-        "feature": "tariff_index_total",
-        "importance": 0.1326780589290155
+        "feature": "china_tariff_coverage_pct",
+        "importance": 0.14652367823322904
+      },
+      {
+        "feature": "gdp_growth",
+        "importance": 0.07141011260406756
       },
       {
         "feature": "dollar_index",
-        "importance": 0.11243036701803172
+        "importance": 0.07103652165050495
       },
       {
-        "feature": "treasury_yield_10y",
-        "importance": 0.10849452877973531
-      },
-      {
-        "feature": "gdp_growth_lag2",
-        "importance": 0.08529297385592033
+        "feature": "crypto_index",
+        "importance": 0.07085665496603434
       }
     ],
     "gradient_boosting": [
       {
-        "feature": "tariff_index_total",
-        "importance": 0.5656821214800575
+        "feature": "china_tariff_coverage_pct",
+        "importance": 0.4321400548057099
       },
       {
         "feature": "gdp_growth_lag1",
-        "importance": 0.2099589041609606
+        "importance": 0.35983472501207936
       },
       {
-        "feature": "tariff_index_total_lag1",
-        "importance": 0.07292379218568372
+        "feature": "row_tariff_index",
+        "importance": 0.037382544962121046
       },
       {
         "feature": "dollar_index",
-        "importance": 0.051582441493891795
+        "importance": 0.02817653376417882
       },
       {
-        "feature": "unemployment_rate",
-        "importance": 0.02780222698965407
+        "feature": "china_tariff_index",
+        "importance": 0.023111465347020705
       }
     ]
   }

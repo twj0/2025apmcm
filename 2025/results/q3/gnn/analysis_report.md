@@ -1,6 +1,6 @@
 # Q3 GNN Supply Chain Risk Analysis Report
 
-**Generated:** 2025-11-21 17:57:48
+**Generated:** 2025-11-21 21:15:10
 
 ## Network Structure
 
