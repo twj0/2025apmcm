@@ -3,6 +3,8 @@ Q4: Tariff Revenue - Short and Medium-Term Analysis
 
 Dynamic "Laffer curve" analysis with quadratic tariff-revenue relationship
 and lagged import response to predict revenue over Trump's second term.
+
+Enhanced with ML models for dynamic prediction.
 """
 
 import pandas as pd
@@ -13,6 +15,11 @@ from typing import Dict, Optional, List
 import logging
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from statsmodels.tsa.arima.model import ARIMA
+import warnings
+warnings.filterwarnings('ignore')
 
 import sys
 sys.path.append(str(Path(__file__).parents[1]))
@@ -31,6 +38,13 @@ class TariffRevenueModel:
         self.panel_data: Optional[pd.DataFrame] = None
         self.models: Dict = {}
         self.elasticities: Dict = {}
+        self.ml_models: Dict = {}
+
+        # Create output directories
+        self.econometric_dir = RESULTS_DIR / 'q4' / 'econometric'
+        self.ml_dir = RESULTS_DIR / 'q4' / 'ml'
+        self.econometric_dir.mkdir(parents=True, exist_ok=True)
+        self.ml_dir.mkdir(parents=True, exist_ok=True)
         
     def load_q4_data(self) -> pd.DataFrame:
         """Load and aggregate data for revenue analysis.
@@ -154,10 +168,14 @@ class TariffRevenueModel:
             logger.error(f"Error estimating static model: {e}")
             results = {}
         
-        # Save results
+        # Save results to econometric directory
+        with open(self.econometric_dir / 'static_laffer.json', 'w') as f:
+            json.dump(results, f, indent=2)
+
+        # Also save to old location for compatibility
         with open(RESULTS_DIR / 'q4_static_laffer.json', 'w') as f:
             json.dump(results, f, indent=2)
-        
+
         return results
     
     def estimate_dynamic_import_response(
@@ -207,9 +225,14 @@ class TariffRevenueModel:
                 logger.error(f"Dynamic import parameter '{k}' is missing or None")
                 return {}
         
+        # Save to econometric directory
+        with open(self.econometric_dir / 'dynamic_import.json', 'w') as f:
+            json.dump(params, f, indent=2)
+
+        # Also save to old location for compatibility
         with open(RESULTS_DIR / 'q4_dynamic_import.json', 'w') as f:
             json.dump(params, f, indent=2)
-        
+
         return params
     
     def simulate_second_term_revenue(
@@ -329,97 +352,331 @@ class TariffRevenueModel:
                 'net_gain': float(net_revenue_gain),
             }
         
-        # Save results
+        # Save results to econometric directory
+        results_df.to_csv(self.econometric_dir / 'revenue_scenarios.csv', index=False)
+
+        if summary:
+            with open(self.econometric_dir / 'revenue_summary.json', 'w') as f:
+                json.dump(summary, f, indent=2)
+
+        # Also save to old location for compatibility
         results_df.to_csv(RESULTS_DIR / 'q4_revenue_scenarios.csv', index=False)
-        
+
         if summary:
             with open(RESULTS_DIR / 'q4_revenue_summary.json', 'w') as f:
                 json.dump(summary, f, indent=2)
-        
+
         return results_df
     
+    def engineer_features(self, panel_df: pd.DataFrame) -> pd.DataFrame:
+        """Engineer features for ML models."""
+        df = panel_df.copy()
+        df = df.sort_values('year').reset_index(drop=True)
+
+        # Lagged features
+        df['tariff_lag1'] = df['avg_tariff'].shift(1)
+        df['tariff_lag2'] = df['avg_tariff'].shift(2)
+        df['revenue_lag1'] = df['total_revenue'].shift(1)
+
+        # Tariff changes
+        df['tariff_change'] = df['avg_tariff'].diff()
+        df['tariff_change_lag1'] = df['tariff_change'].shift(1)
+
+        # Policy indicators
+        df['high_tariff_regime'] = (df['avg_tariff'] > df['avg_tariff'].median()).astype(int)
+
+        return df.dropna()
+
+    def train_ml_models(self, panel_df: Optional[pd.DataFrame] = None) -> Dict:
+        """Train ML models for revenue prediction."""
+        if panel_df is None:
+            panel_df = self.panel_data
+
+        if panel_df is None or len(panel_df) < 10:
+            logger.error("Insufficient data for ML training")
+            return {}
+
+        logger.info("Training ML models for revenue prediction")
+
+        # Load tariff data
+        avg_tariff_file = DATA_EXTERNAL / 'q4_avg_tariff_by_year.csv'
+        if not avg_tariff_file.exists():
+            logger.error("Average tariff data required for ML training")
+            return {}
+
+        avg_df = pd.read_csv(avg_tariff_file)
+        panel_df = panel_df.merge(avg_df[['year', 'avg_tariff']], on='year', how='left')
+        panel_df = panel_df.dropna(subset=['avg_tariff'])
+
+        # Engineer features
+        df = self.engineer_features(panel_df)
+
+        if len(df) < 5:
+            logger.error("Insufficient data after feature engineering")
+            return {}
+
+        # Prepare training data
+        feature_cols = ['avg_tariff', 'tariff_lag1', 'tariff_lag2', 'tariff_change',
+                       'tariff_change_lag1', 'high_tariff_regime']
+        X = df[feature_cols].values
+        y = df['total_revenue'].values
+
+        # Train Gradient Boosting model
+        gb_model = GradientBoostingRegressor(n_estimators=100, max_depth=3, random_state=42)
+        gb_model.fit(X, y)
+        y_pred = gb_model.predict(X)
+
+        # Calculate metrics
+        metrics = {
+            'rmse': float(np.sqrt(mean_squared_error(y, y_pred))),
+            'mae': float(mean_absolute_error(y, y_pred)),
+            'r2': float(r2_score(y, y_pred)),
+            'feature_importance': {col: float(imp) for col, imp in zip(feature_cols, gb_model.feature_importances_)}
+        }
+
+        self.ml_models['gradient_boosting'] = gb_model
+        logger.info(f"GB Model R²: {metrics['r2']:.3f}, RMSE: {metrics['rmse']:.0f}")
+
+        # Save model metadata
+        with open(self.ml_dir / 'gb_model_metrics.json', 'w') as f:
+            json.dump(metrics, f, indent=2)
+
+        return metrics
+
+    def train_arima_model(self, panel_df: Optional[pd.DataFrame] = None) -> Dict:
+        """Train ARIMA model for time series forecasting."""
+        if panel_df is None:
+            panel_df = self.panel_data
+
+        if panel_df is None or len(panel_df) < 10:
+            logger.error("Insufficient data for ARIMA")
+            return {}
+
+        logger.info("Training ARIMA model for time series forecasting")
+
+        revenue_series = panel_df.sort_values('year')['total_revenue'].values
+
+        try:
+            arima_model = ARIMA(revenue_series, order=(1, 1, 1))
+            arima_fit = arima_model.fit()
+            self.ml_models['arima'] = arima_fit
+
+            metrics = {
+                'aic': float(arima_fit.aic),
+                'bic': float(arima_fit.bic),
+                'order': [1, 1, 1]
+            }
+
+            logger.info(f"ARIMA Model AIC: {metrics['aic']:.1f}")
+
+            with open(self.ml_dir / 'arima_model_metrics.json', 'w') as f:
+                json.dump(metrics, f, indent=2)
+
+            return metrics
+
+        except Exception as e:
+            logger.error(f"ARIMA training failed: {e}")
+            return {}
+
+    def ml_forecast_revenue(self, tariff_scenarios: Dict, years: List[int]) -> pd.DataFrame:
+        """Forecast revenue using ML models."""
+        if 'gradient_boosting' not in self.ml_models:
+            logger.error("ML models not trained")
+            return pd.DataFrame()
+
+        logger.info("Generating ML-based revenue forecasts")
+
+        gb_model = self.ml_models['gradient_boosting']
+        results = []
+
+        for scenario_name, tariff_path in tariff_scenarios.items():
+            for i, (year, tariff) in enumerate(zip(years, tariff_path)):
+                # Create features
+                tariff_lag1 = tariff_path[i-1] if i > 0 else tariff
+                tariff_lag2 = tariff_path[i-2] if i > 1 else tariff_lag1
+                tariff_change = tariff - tariff_lag1
+                tariff_change_lag1 = tariff_lag1 - tariff_lag2 if i > 0 else 0
+                high_tariff = 1 if tariff > 0.05 else 0
+
+                features = np.array([[tariff, tariff_lag1, tariff_lag2, tariff_change,
+                                    tariff_change_lag1, high_tariff]])
+
+                revenue_pred = gb_model.predict(features)[0]
+
+                results.append({
+                    'scenario': scenario_name,
+                    'year': year,
+                    'tariff_rate': tariff,
+                    'revenue_ml': revenue_pred
+                })
+
+        results_df = pd.DataFrame(results)
+
+        # Save ML forecasts
+        results_df.to_csv(self.ml_dir / 'ml_revenue_forecasts.csv', index=False)
+
+        return results_df
+
+    def compare_models(self, econometric_df: pd.DataFrame, ml_df: pd.DataFrame) -> Dict:
+        """Compare econometric vs ML predictions."""
+        logger.info("Comparing econometric and ML predictions")
+
+        merged = econometric_df.merge(ml_df, on=['scenario', 'year', 'tariff_rate'], how='inner')
+
+        comparison = {}
+        for scenario in merged['scenario'].unique():
+            data = merged[merged['scenario'] == scenario]
+            econ_total = data['revenue'].sum()
+            ml_total = data['revenue_ml'].sum()
+            diff_pct = ((ml_total - econ_total) / econ_total) * 100
+
+            comparison[scenario] = {
+                'econometric_total': float(econ_total),
+                'ml_total': float(ml_total),
+                'difference_pct': float(diff_pct)
+            }
+
+        # Save comparison
+        with open(self.ml_dir / 'model_comparison.json', 'w') as f:
+            json.dump(comparison, f, indent=2)
+
+        # Save merged data
+        merged.to_csv(self.ml_dir / 'combined_forecasts.csv', index=False)
+
+        # Create markdown report
+        md_lines = ["# Model Comparison: Econometric vs ML\n"]
+        for scenario, metrics in comparison.items():
+            md_lines.append(f"## {scenario}\n")
+            md_lines.append(f"- Econometric Total: ${metrics['econometric_total']/1e9:.2f}B\n")
+            md_lines.append(f"- ML Total: ${metrics['ml_total']/1e9:.2f}B\n")
+            md_lines.append(f"- Difference: {metrics['difference_pct']:.1f}%\n\n")
+
+        with open(self.ml_dir / 'model_comparison.md', 'w') as f:
+            f.writelines(md_lines)
+
+        logger.info("Model comparison complete")
+        return comparison
+
     def plot_q4_results(self) -> None:
         """Generate plots for Q4 results."""
         import matplotlib.pyplot as plt
         from utils.config import apply_plot_style
-        
+
         apply_plot_style()
-        
+
         try:
             revenue_df = pd.read_csv(RESULTS_DIR / 'q4_revenue_scenarios.csv')
         except FileNotFoundError:
             logger.error("Revenue scenarios not found")
             return
-        
+
         logger.info("Creating Q4 plots")
-        
+
         # Plot 1: Revenue over time by scenario
         fig, ax = plt.subplots(figsize=(12, 6))
-        
+
         for scenario in revenue_df['scenario'].unique():
             data = revenue_df[revenue_df['scenario'] == scenario]
             ax.plot(data['year'], data['revenue'] / 1e9, marker='o', label=scenario)
-        
+
         ax.set_xlabel('Year')
         ax.set_ylabel('Tariff Revenue ($ Billions)')
         ax.set_title('Projected Tariff Revenue: Baseline vs Reciprocal Tariff Policy')
         ax.legend()
         ax.grid(alpha=0.3)
-        
+
         plt.tight_layout()
         fig.savefig(FIGURES_DIR / 'q4_revenue_time_path.pdf')
         plt.close()
-        
+
         # Plot 2: Laffer curve (stylized)
         fig, ax = plt.subplots(figsize=(10, 6))
-        
+
         tariff_rates = np.linspace(0, 0.50, 100)
         # Stylized Laffer curve: R = t * (1 - t/t_max) * base
         t_max = 0.40
         base_revenue = 100
         revenues = tariff_rates * (1 - tariff_rates / t_max) * base_revenue
-        
+
         ax.plot(tariff_rates * 100, revenues, linewidth=2)
         ax.axvline(x=20, color='red', linestyle='--', label='Revenue-maximizing rate (~20%)')
         ax.axvline(x=12, color='blue', linestyle='--', label='Proposed policy (~12%)')
-        
+
         ax.set_xlabel('Tariff Rate (%)')
         ax.set_ylabel('Revenue (Stylized Index)')
         ax.set_title('Laffer Curve: Tariff Rate vs Revenue')
         ax.legend()
         ax.grid(alpha=0.3)
-        
+
         plt.tight_layout()
         fig.savefig(FIGURES_DIR / 'q4_laffer_curve.pdf')
         plt.close()
-        
+
         logger.info("Q4 plots saved")
 
 
-def run_q4_analysis() -> None:
-    """Run complete Q4 analysis pipeline."""
+def run_q4_analysis(use_ml: bool = True) -> None:
+    """Run complete Q4 analysis pipeline with ML enhancements.
+
+    Args:
+        use_ml: Whether to include ML-based predictions
+    """
     logger.info("="*60)
     logger.info("Starting Q4 Tariff Revenue Analysis")
+    if use_ml:
+        logger.info("ML enhancements: ENABLED")
     logger.info("="*60)
-    
+
     model = TariffRevenueModel()
-    
+
     # Step 1: Load data
-    model.load_q4_data()
-    
-    # Step 2: Estimate static model
+    panel_data = model.load_q4_data()
+
+    # Step 2: Estimate static model (econometric)
     static_results = model.estimate_static_revenue_model()
-    
-    # Step 3: Estimate dynamic model
+
+    # Step 3: Estimate dynamic model (econometric)
     dynamic_results = model.estimate_dynamic_import_response()
-    
-    # Step 4: Simulate revenue scenarios
-    model.simulate_second_term_revenue(static_results, dynamic_results)
-    
-    # Step 5: Plot results
+
+    # Step 4: Simulate revenue scenarios (econometric)
+    econ_scenarios = model.simulate_second_term_revenue(static_results, dynamic_results)
+
+    # Step 5: ML enhancements
+    if use_ml and len(panel_data) >= 10:
+        logger.info("-"*60)
+        logger.info("ML Enhancement Phase")
+        logger.info("-"*60)
+
+        # Train ML models
+        model.train_ml_models(panel_data)
+        model.train_arima_model(panel_data)
+
+        # Load tariff scenarios for ML forecasting
+        scenarios_file = DATA_EXTERNAL / 'q4_tariff_scenarios.json'
+        if scenarios_file.exists():
+            with open(scenarios_file, 'r') as f:
+                config = json.load(f)
+
+            years = config.get('years', [2025, 2026, 2027, 2028, 2029])
+            tariff_scenarios = config.get('scenarios', {})
+
+            # Generate ML forecasts
+            ml_forecasts = model.ml_forecast_revenue(tariff_scenarios, years)
+
+            # Compare models
+            if not econ_scenarios.empty and not ml_forecasts.empty:
+                model.compare_models(econ_scenarios, ml_forecasts)
+        else:
+            logger.warning("Tariff scenarios file not found, skipping ML forecasts")
+
+    # Step 6: Plot results
     model.plot_q4_results()
-    
+
+    logger.info("="*60)
     logger.info("Q4 analysis complete")
+    logger.info(f"Results saved to: {model.econometric_dir}")
+    if use_ml:
+        logger.info(f"ML results saved to: {model.ml_dir}")
     logger.info("="*60)
 
 

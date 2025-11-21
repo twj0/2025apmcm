@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 MONTHLY_DATA_FILE = DATA_PROCESSED / 'q1' / 'q1_1.csv'
 ANNUAL_DATA_FILE = DATA_PROCESSED / 'q1' / 'q1_0.csv'
-TARGET_COLUMNS = ['import_quantity', 'unit_price', 'market_share']
+TARGET_COLUMNS = ['import_quantity', 'unit_price']
 Q1_RESULTS_DIR = RESULTS_DIR / 'q1'
 
 
@@ -195,10 +195,10 @@ class SoybeanTradeModel:
         
         logger.info("Estimating trade elasticities")
         
-        # Model 1: Import value response to price
+        # Model 1: Import quantity response to price
         try:
             # Simple OLS with exporter fixed effects
-            formula = 'ln_import_value ~ ln_price_with_tariff + C(exporter)'
+            formula = 'ln_import_quantity ~ ln_price_with_tariff + C(exporter)'
             model1 = smf.ols(formula, data=panel_df).fit()
             
             self.model_results['trade_elasticity'] = model1
@@ -338,11 +338,17 @@ class SoybeanTradeModel:
                 old_price_with_tariff = row['price_with_tariff']
                 new_price_with_tariff = row['unit_value'] * (1 + new_tariff)
                 
-                # Apply elasticity to compute new import value
+                # Apply elasticity to compute new import quantity, then value
                 price_change_pct = (new_price_with_tariff / old_price_with_tariff) - 1
-                import_change_pct = price_elast * price_change_pct
-                
-                new_import_value = row['import_value_usd'] * (1 + import_change_pct)
+                quantity_change_pct = price_elast * price_change_pct
+
+                base_qty = row.get('import_quantity_tonnes', np.nan)
+                if pd.isna(base_qty):
+                    # Fallback if quantity column is not present
+                    base_qty = (row['import_value_usd'] / max(old_price_with_tariff, 1e-6))
+
+                new_import_quantity = base_qty * (1 + quantity_change_pct)
+                new_import_value = new_import_quantity * new_price_with_tariff
                 
                 results.append({
                     'scenario': scenario_name,
@@ -351,8 +357,9 @@ class SoybeanTradeModel:
                     'baseline_tariff': row['tariff_cn_on_exporter'],
                     'new_tariff': new_tariff,
                     'tariff_change': tariff_changes.get(exporter, 0.0),
+                    'simulated_import_quantity': new_import_quantity,
                     'simulated_import_value': new_import_value,
-                    'import_change_pct': import_change_pct * 100,
+                    'import_change_pct': quantity_change_pct * 100,
                 })
         
         results_df = pd.DataFrame(results)
@@ -360,9 +367,15 @@ class SoybeanTradeModel:
         # Compute shares within each scenario
         for scenario in results_df['scenario'].unique():
             mask = results_df['scenario'] == scenario
-            total = results_df.loc[mask, 'simulated_import_value'].sum()
+            # Quantity-based market share (default)
+            total_qty = results_df.loc[mask, 'simulated_import_quantity'].sum()
             results_df.loc[mask, 'market_share'] = (
-                results_df.loc[mask, 'simulated_import_value'] / total * 100
+                results_df.loc[mask, 'simulated_import_quantity'] / max(total_qty, 1e-6) * 100
+            )
+            # Value-based market share (for reference)
+            total_val = results_df.loc[mask, 'simulated_import_value'].sum()
+            results_df.loc[mask, 'market_share_value'] = (
+                results_df.loc[mask, 'simulated_import_value'] / max(total_val, 1e-6) * 100
             )
         
         # Save results
@@ -551,7 +564,10 @@ class SoybeanDataProcessor:
         target_scaler = MinMaxScaler()
 
         scaled_features = feature_scaler.fit_transform(features[self.feature_columns])
-        scaled_targets = target_scaler.fit_transform(features[self.target_columns])
+        # Predict logs of targets to enforce positivity after exp
+        eps = 1e-6
+        targets_log = np.log(features[self.target_columns].values + eps)
+        scaled_targets = target_scaler.fit_transform(targets_log)
         self.scalers['features'] = feature_scaler
         self.scalers['targets'] = target_scaler
         self._scaled_feature_matrix = scaled_features
@@ -630,10 +646,7 @@ class SoybeanLSTMModel:
             y_true_rs = tf.reshape(y_true, (-1, self.output_steps, self.target_dim))
             y_pred_rs = tf.reshape(y_pred, (-1, self.output_steps, self.target_dim))
             mse = tf.reduce_mean(tf.square(y_true_rs - y_pred_rs), axis=[1, 2])
-            share_true = y_true_rs[:, :, 2]
-            tariff_weight = tf.where(share_true > 0.1, 2.0, 1.0)
-            weighted = mse * tf.reduce_mean(tariff_weight, axis=1)
-            return tf.reduce_mean(weighted)
+            return tf.reduce_mean(mse)
 
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
@@ -712,8 +725,11 @@ class SoybeanLSTMPipeline:
         y_true_flat = y_val.reshape(-1, target_dim)
         y_pred_flat = y_pred.reshape(-1, target_dim)
 
-        y_true = self.processor.scalers['targets'].inverse_transform(y_true_flat)
-        y_pred_inv = self.processor.scalers['targets'].inverse_transform(y_pred_flat)
+        y_true_log = self.processor.scalers['targets'].inverse_transform(y_true_flat)
+        y_pred_log = self.processor.scalers['targets'].inverse_transform(y_pred_flat)
+        # Back to actual space
+        y_true = np.exp(y_true_log)
+        y_pred_inv = np.exp(y_pred_log)
 
         metrics: Dict[str, Dict[str, float]] = {}
         for idx, col in enumerate(self.processor.target_columns):
@@ -742,7 +758,8 @@ class SoybeanLSTMPipeline:
             window_input = np.expand_dims(latest_window, axis=0)
             pred_scaled = self.model.predict(window_input)
             pred_scaled = pred_scaled.reshape(self.config.forecast_horizon, len(self.processor.target_columns))
-            pred_actual = self.processor.scalers['targets'].inverse_transform(pred_scaled)
+            pred_log = self.processor.scalers['targets'].inverse_transform(pred_scaled)
+            pred_actual = np.exp(pred_log)
 
             last_date = exporter_raw['date'].max()
             future_dates = pd.date_range(last_date + pd.offsets.MonthBegin(1), periods=self.config.forecast_horizon, freq='MS')
@@ -756,7 +773,7 @@ class SoybeanLSTMPipeline:
 
     def _persist_outputs(self, predictions: Dict[str, pd.DataFrame], metrics: Dict, history: Dict) -> None:
         ensure_directories()
-        output_dir = Q1_RESULTS_DIR
+        output_dir = Q1_RESULTS_DIR / 'LSTM'
         output_dir.mkdir(parents=True, exist_ok=True)
         if not predictions:
             logger.warning("No predictions generated; skipping persistence.")
@@ -764,6 +781,15 @@ class SoybeanLSTMPipeline:
 
         combined = pd.concat(predictions.values(), ignore_index=True)
         combined = combined[['date', 'exporter'] + self.processor.target_columns]
+        # Recompute market share from predicted import values to enforce sum-to-one per date
+        try:
+            combined['import_value'] = combined['import_quantity'] * combined['unit_price']
+            total_by_date = combined.groupby('date')['import_value'].transform('sum')
+            combined['market_share'] = combined['import_value'] / (total_by_date + 1e-6)
+            combined['market_share'] = combined['market_share'].clip(0.0, 1.0)
+            combined = combined.drop(columns=['import_value'])
+        except Exception as exc:
+            logger.warning("Failed to recompute market share from import values: %s", exc)
 
         csv_path = output_dir / 'q1_lstm_predictions.csv'
         json_path = output_dir / 'q1_lstm_predictions.json'

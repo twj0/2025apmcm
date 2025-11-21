@@ -3,17 +3,25 @@ Q5: Macroeconomic, Sectoral, and Financial Effects; Reshoring
 
 VAR/SVAR analysis and event study to assess tariff impacts on macro indicators,
 financial markets, and manufacturing reshoring.
+
+Enhanced with VAR-LSTM hybrid and ML methods for improved prediction.
 """
 
 import pandas as pd
 import numpy as np
 import json
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 import logging
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from statsmodels.tsa.api import VAR
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+import tensorflow as tf
+from tensorflow import keras
 
 import sys
 sys.path.append(str(Path(__file__).parents[1]))
@@ -22,15 +30,23 @@ from utils.data_loader import TariffDataLoader
 
 logger = logging.getLogger(__name__)
 
+# Set seeds for reproducibility
+np.random.seed(42)
+tf.random.set_seed(42)
+
 
 class MacroFinanceModel:
-    """Model for macroeconomic and financial impact analysis."""
-    
+    """Model for macroeconomic and financial impact analysis with VAR+ML hybrid."""
+
     def __init__(self):
         """Initialize the model."""
         self.loader = TariffDataLoader()
         self.time_series: Optional[pd.DataFrame] = None
         self.models: Dict = {}
+        self.q5_econometric_dir = RESULTS_DIR / 'q5' / 'econometric'
+        self.q5_ml_dir = RESULTS_DIR / 'q5' / 'ml'
+        self.q5_econometric_dir.mkdir(parents=True, exist_ok=True)
+        self.q5_ml_dir.mkdir(parents=True, exist_ok=True)
         
     def load_q5_data(self) -> pd.DataFrame:
         """Load and merge all data sources for Q5.
@@ -182,10 +198,9 @@ class MacroFinanceModel:
             except Exception as e:
                 logger.error(f"Error for {dep_var}: {e}")
         
-        # Save results
-        with open(RESULTS_DIR / 'q5_regressions.json', 'w') as f:
-            json.dump(results, f, indent=2)
-        
+        # Save results to econometric directory
+        self._save_results(results, 'regressions', self.q5_econometric_dir)
+
         return results
     
     def estimate_var_model(
@@ -265,10 +280,9 @@ class MacroFinanceModel:
             logger.error(f"Error estimating VAR: {e}")
             irf_summary = {}
         
-        # Save results
-        with open(RESULTS_DIR / 'q5_var_results.json', 'w') as f:
-            json.dump(irf_summary, f, indent=2)
-        
+        # Save results to econometric directory
+        self._save_results(irf_summary, 'var_results', self.q5_econometric_dir)
+
         return irf_summary
     
     def evaluate_reshoring(
@@ -332,10 +346,9 @@ class MacroFinanceModel:
             logger.error(f"Error evaluating reshoring: {e}")
             results = {}
         
-        # Save results
-        with open(RESULTS_DIR / 'q5_reshoring_effects.json', 'w') as f:
-            json.dump(results, f, indent=2)
-        
+        # Save results to econometric directory
+        self._save_results(results, 'reshoring_effects', self.q5_econometric_dir)
+
         return results
     
     def plot_q5_results(self) -> None:
@@ -419,31 +432,316 @@ class MacroFinanceModel:
         
         logger.info("Q5 plots saved")
 
+    def _save_results(self, results: Dict, name: str, directory: Path) -> None:
+        """Save results in multiple formats."""
+        # JSON
+        with open(directory / f'{name}.json', 'w') as f:
+            json.dump(results, f, indent=2)
+
+        # CSV (if possible)
+        try:
+            df = pd.DataFrame([results]) if not isinstance(results, list) else pd.DataFrame(results)
+            df.to_csv(directory / f'{name}.csv', index=False)
+        except:
+            pass
+
+        # Markdown
+        with open(directory / f'{name}.md', 'w') as f:
+            f.write(f"# {name.replace('_', ' ').title()}\n\n")
+            f.write("```json\n")
+            f.write(json.dumps(results, indent=2))
+            f.write("\n```\n")
+
+    def prepare_ml_features(self, ts_df: Optional[pd.DataFrame] = None) -> Tuple[pd.DataFrame, List[str]]:
+        """Prepare features for ML models."""
+        if ts_df is None:
+            ts_df = self.time_series
+
+        df = ts_df.copy()
+
+        # Create lag features
+        for col in ['tariff_index_total', 'retaliation_index', 'gdp_growth']:
+            if col in df.columns:
+                df[f'{col}_lag1'] = df[col].shift(1)
+                df[f'{col}_lag2'] = df[col].shift(2)
+
+        # Create interaction features
+        if 'tariff_index_total' in df.columns and 'retaliation_index' in df.columns:
+            df['tariff_retaliation_interaction'] = df['tariff_index_total'] * df['retaliation_index']
+
+        # Drop NaN from lags
+        df = df.dropna()
+
+        feature_cols = [c for c in df.columns if c not in ['year', 'manufacturing_va_share',
+                                                             'manufacturing_employment_share',
+                                                             'reshoring_fdi_billions']]
+
+        return df, feature_cols
+
+    def train_var_lstm_hybrid(self, ts_df: Optional[pd.DataFrame] = None,
+                              variables: Optional[List[str]] = None) -> Dict:
+        """VAR-LSTM hybrid for improved impulse response prediction."""
+        if ts_df is None:
+            ts_df = self.time_series
+
+        if variables is None:
+            variables = ['tariff_index_total', 'retaliation_index', 'gdp_growth', 'industrial_production']
+
+        available_vars = [v for v in variables if v in ts_df.columns]
+
+        if len(available_vars) < 2:
+            logger.warning("Insufficient variables for VAR-LSTM")
+            return {}
+
+        logger.info("Training VAR-LSTM hybrid model")
+
+        try:
+            # Get VAR residuals
+            var_data = ts_df[available_vars].dropna()
+
+            if len(var_data) < 10:
+                return {}
+
+            var_model = VAR(var_data)
+            var_fitted = self.models.get('var', var_model.fit(maxlags=2))
+
+            # Get residuals
+            residuals = var_fitted.resid
+
+            # Prepare LSTM data
+            seq_length = 3
+            X, y = [], []
+            for i in range(len(residuals) - seq_length):
+                X.append(residuals.iloc[i:i+seq_length].values)
+                y.append(residuals.iloc[i+seq_length].values)
+
+            X = np.array(X)
+            y = np.array(y)
+
+            if len(X) < 5:
+                logger.warning("Insufficient data for LSTM")
+                return {}
+
+            # Build LSTM
+            model = keras.Sequential([
+                keras.layers.LSTM(16, input_shape=(seq_length, len(available_vars))),
+                keras.layers.Dense(len(available_vars))
+            ])
+
+            model.compile(optimizer='adam', loss='mse')
+            model.fit(X, y, epochs=50, batch_size=2, verbose=0)
+
+            # Predict
+            predictions = model.predict(X, verbose=0)
+            mse = mean_squared_error(y, predictions)
+
+            results = {
+                'model_type': 'VAR-LSTM Hybrid',
+                'variables': available_vars,
+                'sequence_length': seq_length,
+                'mse': float(mse),
+                'rmse': float(np.sqrt(mse)),
+                'training_samples': len(X)
+            }
+
+            self.models['var_lstm'] = model
+
+            logger.info(f"VAR-LSTM trained: RMSE={results['rmse']:.4f}")
+
+            self._save_results(results, 'var_lstm_hybrid', self.q5_ml_dir)
+
+            return results
+
+        except Exception as e:
+            logger.error(f"Error in VAR-LSTM: {e}")
+            return {}
+
+    def train_reshoring_ml(self, ts_df: Optional[pd.DataFrame] = None) -> Dict:
+        """Train ML models for reshoring prediction with feature importance."""
+        if ts_df is None:
+            ts_df = self.time_series
+
+        if 'manufacturing_va_share' not in ts_df.columns:
+            logger.warning("Cannot train reshoring ML: missing target")
+            return {}
+
+        logger.info("Training ML models for reshoring prediction")
+
+        try:
+            # Prepare features
+            df, feature_cols = self.prepare_ml_features(ts_df)
+
+            if len(df) < 8:
+                logger.warning("Insufficient data for ML training")
+                return {}
+
+            X = df[feature_cols].values
+            y = df['manufacturing_va_share'].values
+
+            # Scale features
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
+
+            # Split data
+            test_size = max(2, int(len(X) * 0.2))
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_scaled, y, test_size=test_size, random_state=42, shuffle=False
+            )
+
+            results = {'models': {}, 'feature_importance': {}}
+
+            # Random Forest
+            rf = RandomForestRegressor(n_estimators=50, max_depth=3, random_state=42)
+            rf.fit(X_train, y_train)
+            rf_pred = rf.predict(X_test)
+
+            results['models']['random_forest'] = {
+                'rmse': float(np.sqrt(mean_squared_error(y_test, rf_pred))),
+                'mae': float(mean_absolute_error(y_test, rf_pred)),
+                'r2': float(r2_score(y_test, rf_pred))
+            }
+
+            # Feature importance
+            importance_rf = dict(zip(feature_cols, rf.feature_importances_.tolist()))
+            results['feature_importance']['random_forest'] = importance_rf
+
+            # Gradient Boosting
+            gb = GradientBoostingRegressor(n_estimators=50, max_depth=3, random_state=42)
+            gb.fit(X_train, y_train)
+            gb_pred = gb.predict(X_test)
+
+            results['models']['gradient_boosting'] = {
+                'rmse': float(np.sqrt(mean_squared_error(y_test, gb_pred))),
+                'mae': float(mean_absolute_error(y_test, gb_pred)),
+                'r2': float(r2_score(y_test, gb_pred))
+            }
+
+            importance_gb = dict(zip(feature_cols, gb.feature_importances_.tolist()))
+            results['feature_importance']['gradient_boosting'] = importance_gb
+
+            # Top features
+            top_features_rf = sorted(importance_rf.items(), key=lambda x: x[1], reverse=True)[:5]
+            top_features_gb = sorted(importance_gb.items(), key=lambda x: x[1], reverse=True)[:5]
+
+            results['top_features'] = {
+                'random_forest': [{'feature': f, 'importance': float(i)} for f, i in top_features_rf],
+                'gradient_boosting': [{'feature': f, 'importance': float(i)} for f, i in top_features_gb]
+            }
+
+            self.models['rf_reshoring'] = rf
+            self.models['gb_reshoring'] = gb
+            self.models['scaler'] = scaler
+
+            logger.info(f"RF RMSE: {results['models']['random_forest']['rmse']:.4f}")
+            logger.info(f"GB RMSE: {results['models']['gradient_boosting']['rmse']:.4f}")
+
+            self._save_results(results, 'reshoring_ml_models', self.q5_ml_dir)
+
+            # Save feature importance separately
+            self._save_results(results['feature_importance'], 'feature_importance', self.q5_ml_dir)
+
+            return results
+
+        except Exception as e:
+            logger.error(f"Error in reshoring ML: {e}")
+            return {}
+
+    def generate_model_comparison(self) -> Dict:
+        """Generate comparison between econometric and ML models."""
+        logger.info("Generating model comparison")
+
+        comparison = {
+            'econometric_models': {},
+            'ml_models': {},
+            'summary': {}
+        }
+
+        # Load econometric results
+        try:
+            with open(self.q5_econometric_dir / 'var_results.json', 'r') as f:
+                var_results = json.load(f)
+                comparison['econometric_models']['VAR'] = {
+                    'aic': var_results.get('aic'),
+                    'bic': var_results.get('bic'),
+                    'lag_order': var_results.get('lag_order')
+                }
+        except:
+            pass
+
+        try:
+            with open(self.q5_econometric_dir / 'regressions.json', 'r') as f:
+                reg_results = json.load(f)
+                comparison['econometric_models']['OLS_Regressions'] = {
+                    'num_models': len(reg_results),
+                    'avg_rsquared': float(np.mean([v.get('rsquared', 0) for v in reg_results.values()]))
+                }
+        except:
+            pass
+
+        # Load ML results
+        try:
+            with open(self.q5_ml_dir / 'var_lstm_hybrid.json', 'r') as f:
+                lstm_results = json.load(f)
+                comparison['ml_models']['VAR_LSTM'] = {
+                    'rmse': lstm_results.get('rmse'),
+                    'training_samples': lstm_results.get('training_samples')
+                }
+        except:
+            pass
+
+        try:
+            with open(self.q5_ml_dir / 'reshoring_ml_models.json', 'r') as f:
+                ml_results = json.load(f)
+                comparison['ml_models']['Reshoring_ML'] = ml_results.get('models', {})
+        except:
+            pass
+
+        # Summary
+        comparison['summary'] = {
+            'total_econometric_models': len(comparison['econometric_models']),
+            'total_ml_models': len(comparison['ml_models']),
+            'hybrid_approach': 'VAR + LSTM for impulse responses, RF/GB for reshoring prediction',
+            'recommendation': 'Use VAR for interpretability, ML for prediction accuracy'
+        }
+
+        self._save_results(comparison, 'model_comparison', self.q5_ml_dir)
+
+        return comparison
+
 
 def run_q5_analysis() -> None:
-    """Run complete Q5 analysis pipeline."""
+    """Run complete Q5 analysis pipeline with VAR+ML hybrid."""
     logger.info("="*60)
-    logger.info("Starting Q5 Macro/Financial Impact Analysis")
+    logger.info("Starting Q5 Macro/Financial Impact Analysis (VAR+ML Hybrid)")
     logger.info("="*60)
-    
+
     model = MacroFinanceModel()
-    
+
     # Step 1: Load data
     model.load_q5_data()
-    
-    # Step 2: Regression analysis
+
+    # Step 2: Econometric models
+    logger.info("\n--- Econometric Models ---")
     model.estimate_regression_effects()
-    
-    # Step 3: VAR analysis
     model.estimate_var_model()
-    
-    # Step 4: Reshoring evaluation
     model.evaluate_reshoring()
-    
+
+    # Step 3: ML hybrid models
+    logger.info("\n--- ML Hybrid Models ---")
+    model.train_var_lstm_hybrid()
+    model.train_reshoring_ml()
+
+    # Step 4: Model comparison
+    logger.info("\n--- Model Comparison ---")
+    model.generate_model_comparison()
+
     # Step 5: Plot results
     model.plot_q5_results()
-    
+
+    logger.info("\n" + "="*60)
     logger.info("Q5 analysis complete")
+    logger.info(f"Econometric results: {model.q5_econometric_dir}")
+    logger.info(f"ML results: {model.q5_ml_dir}")
     logger.info("="*60)
 
 
