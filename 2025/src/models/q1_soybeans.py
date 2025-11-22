@@ -16,6 +16,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 import math
+import argparse
 
 from sklearn.preprocessing import MinMaxScaler, RobustScaler
 import statsmodels.api as sm
@@ -129,10 +130,12 @@ class SoybeanTradeModel:
             'United States of America': 'US',
         })
 
-        # Derive year from period if not already present
+        # Derive year and month from period if not already present
+        df['period'] = df['period'].astype(str)
         if 'year' not in df.columns:
-            df['period'] = df['period'].astype(str)
             df['year'] = df['period'].str.slice(0, 4).astype(int)
+        if 'month' not in df.columns:
+            df['month'] = df['period'].str.slice(4, 6).astype(int)
 
         # Import quantity in tonnes
         if 'quantity_tons' in df.columns:
@@ -161,23 +164,12 @@ class SoybeanTradeModel:
         else:
             df['tariff_cn_on_exporter'] = 0.0
 
-        # Aggregate to annual panel by exporter for elasticity estimation
-        panel = (
-            df
-            .groupby(['year', 'exporter'], as_index=False)
-            .agg({
-                'import_value_usd': 'sum',
-                'import_quantity_tonnes': 'sum',
-                'tariff_cn_on_exporter': 'mean',  # average annual tariff
-            })
-        )
+        # Unit price and price including tariff at monthly frequency
+        qty = df['import_quantity_tonnes'].replace(0, np.nan)
+        df['unit_value'] = (df['import_value_usd'] / qty).fillna(0.0)
+        df['price_with_tariff'] = df['unit_value'] * (1 + df['tariff_cn_on_exporter'])
 
-        # Unit price and price including tariff
-        qty = panel['import_quantity_tonnes'].replace(0, np.nan)
-        panel['unit_value'] = (panel['import_value_usd'] / qty).fillna(0.0)
-        panel['price_with_tariff'] = panel['unit_value'] * (1 + panel['tariff_cn_on_exporter'])
-
-        return panel
+        return df
     
     def prepare_panel_for_estimation(self) -> pd.DataFrame:
         """Prepare panel data for econometric estimation.
@@ -193,18 +185,19 @@ class SoybeanTradeModel:
         df['ln_price_with_tariff'] = np.log(df['price_with_tariff'] + 1e-6)
         df['ln_unit_value'] = np.log(df['unit_value'] + 1e-6)
         
-        # Compute market shares
-        total_by_year = df.groupby('year')['import_value_usd'].transform('sum')
-        df['market_share'] = df['import_value_usd'] / total_by_year
+        # Compute market shares at (year, month) frequency
+        total_by_ym = df.groupby(['year', 'month'])['import_value_usd'].transform('sum')
+        df['market_share'] = df['import_value_usd'] / total_by_ym
         
-        # Create relative shares (vs US as baseline)
-        us_share = df[df['exporter'] == 'US'].set_index('year')['market_share']
-        df['us_share_ref'] = df['year'].map(us_share)
+        # Create relative shares (vs US as baseline) by (year, month)
+        us_share = df[df['exporter'] == 'US'].set_index(['year', 'month'])['market_share']
+        key_ym = list(zip(df['year'], df['month']))
+        df['us_share_ref'] = pd.Series(key_ym).map(us_share).values
         df['ln_share_ratio'] = np.log((df['market_share'] + 1e-6) / (df['us_share_ref'] + 1e-6))
         
-        # Create relative tariff
-        us_tariff = df[df['exporter'] == 'US'].set_index('year')['tariff_cn_on_exporter']
-        df['us_tariff_ref'] = df['year'].map(us_tariff)
+        # Create relative tariff vs US by (year, month)
+        us_tariff = df[df['exporter'] == 'US'].set_index(['year', 'month'])['tariff_cn_on_exporter']
+        df['us_tariff_ref'] = pd.Series(key_ym).map(us_tariff).values
         df['tariff_diff_vs_us'] = df['tariff_cn_on_exporter'] - df['us_tariff_ref']
         
         logger.info(f"Prepared panel with shape {df.shape}")
@@ -234,8 +227,8 @@ class SoybeanTradeModel:
         
         # Model 1: Import quantity response to price
         try:
-            # OLS with exporter and year fixed effects
-            formula = 'ln_import_quantity ~ ln_price_with_tariff + C(exporter) + C(year)'
+            # OLS with exporter, year, and month fixed effects (Plan 1 controls)
+            formula = 'ln_import_quantity ~ ln_price_with_tariff + C(exporter) + C(year) + C(month)'
             model1 = smf.ols(formula, data=panel_df).fit()
             
             self.model_results['trade_elasticity'] = model1
@@ -261,7 +254,7 @@ class SoybeanTradeModel:
             non_us = panel_df[panel_df['exporter'] != 'US'].copy()
             
             if len(non_us) > 0:
-                formula_share = 'ln_share_ratio ~ tariff_diff_vs_us + C(exporter) + C(year)'
+                formula_share = 'ln_share_ratio ~ tariff_diff_vs_us + C(exporter) + C(year) + C(month)'
                 model2 = smf.ols(formula_share, data=non_us).fit()
                 
                 self.model_results['share_elasticity'] = model2
@@ -1129,4 +1122,18 @@ if __name__ == '__main__':
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
-    run_q1_analysis()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--fix-elasticity",
+        action="store_true",
+    )
+    args = parser.parse_args()
+
+    if args.fix_elasticity:
+        ensure_directories()
+        model = SoybeanTradeModel()
+        model.prepare_panel_for_estimation()
+        model.estimate_trade_elasticities()
+    else:
+        run_q1_analysis()

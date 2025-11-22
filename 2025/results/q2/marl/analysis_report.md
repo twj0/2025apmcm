@@ -1,6 +1,6 @@
 # Q2 MARL Nash Equilibrium Analysis Report
 
-**Generated:** 2025-11-21 21:53:48
+**Generated:** 2025-11-22 08:15:10
 
 ## Game Setup
 
@@ -14,43 +14,27 @@
 
 ## Nash Equilibria Found
 
-**Number of Pure Strategy Equilibria:** 3
+**Number of Pure Strategy Equilibria:** 1
 
 
 ### Equilibrium Details
 
 **Equilibrium 1:**
-- US Tariff: 0.0%
-- Japan Relocation: 0.0%
-- US Payoff: 11.21
-- Japan Payoff: 100.00
-
-**Equilibrium 2:**
-- US Tariff: 10.0%
-- Japan Relocation: 0.0%
-- US Payoff: 11.21
-- Japan Payoff: 100.00
-
-**Equilibrium 3:**
 - US Tariff: 25.0%
-- Japan Relocation: 0.0%
-- US Payoff: 11.21
-- Japan Payoff: 100.00
+- Japan Relocation: 100.0%
+- US Payoff: 4.06
+- Japan Payoff: 60.00
 
 
 ### Pareto Optimal Equilibria
 
-- Tariff: 0.0%, Relocation: 0.0%
-  Payoffs: (US=11.21, Japan=100.00)
-- Tariff: 10.0%, Relocation: 0.0%
-  Payoffs: (US=11.21, Japan=100.00)
-- Tariff: 25.0%, Relocation: 0.0%
-  Payoffs: (US=11.21, Japan=100.00)
+- Tariff: 25.0%, Relocation: 100.0%
+  Payoffs: (US=4.06, Japan=60.00)
 
 ## Policy Recommendation
 
-**Recommended US Tariff:** 0.0%
-**Expected Japan Response:** 0.0% relocation intensity
+**Recommended US Tariff:** 25.0%
+**Expected Japan Response:** 100.0% relocation intensity
 
 **Rationale:** This equilibrium represents a stable outcome where neither 
 player has incentive to unilaterally deviate from their strategy.

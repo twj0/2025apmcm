@@ -17,6 +17,7 @@ $projectDir = Join-Path $srcDir ".." | Resolve-Path
 
 $mainPy   = Join-Path $srcDir "main.py"
 $prepPy   = Join-Path $srcDir "preprocessing\prepare_data.py"
+${q1SoyPy} = Join-Path $srcDir "models\q1_soybeans.py"
 
 function Invoke-ProjectPython {
     param(
@@ -88,6 +89,7 @@ function Show-Menu {
     Write-Host " 6) 运行 Q5 宏观金融 VAR + ML + Transformer (PyTorch)"
     Write-Host " 7) 运行所有模型（不含 ML，适合快速回归）"
     Write-Host " 8) 运行所有模型（含 ML 与深度学习扩展）"
+    Write-Host " 9) 仅运行 Q1 弹性回归修复 (q1_soybeans.py --fix-elasticity)"
     Write-Host " 0) 退出"
     Write-Host "=============================================" -ForegroundColor Cyan
     $choice = Read-Host "请输入选项编号"
@@ -146,6 +148,15 @@ while ($true) {
             Run-MainByQuestion -Q "Q3"
             Run-MainByQuestion -Q "Q4"
             Run-MainByQuestion -Q "Q5"
+        }
+        "9" {
+            # 仅运行 Q1 弹性回归修复，不跑完整 Q1 流水线
+            if (-not (Test-Path $q1SoyPy)) {
+                Write-Host "[警告] 未找到 Q1 弹性脚本：$q1SoyPy" -ForegroundColor Yellow
+            } else {
+                Write-Host "[信息] 仅运行 Q1 弹性回归修复 (q1_soybeans.py --fix-elasticity)" -ForegroundColor Cyan
+                Invoke-ProjectPython @($q1SoyPy, "--fix-elasticity")
+            }
         }
         "0" {
             Write-Host "已退出。" -ForegroundColor Green

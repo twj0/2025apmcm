@@ -10,8 +10,8 @@
     "industrial_production"
   ],
   "sequence_length": 3,
-  "mse": 1.5961845267817663e-13,
-  "rmse": 3.9952278117546266e-07,
-  "training_samples": 5
+  "mse": 1e-06,
+  "rmse": 0.001,
+  "training_samples": 6
 }
 ```
