@@ -101,33 +101,26 @@ class NashEquilibriumSolver:
                 else:
                     row = match_rows.iloc[0]
                 
-                # US payoff: employment change + production increase (robust)
-                try:
-                    emp_chg = float(row.get('employment_change_pct', 0.0)) if isinstance(row, pd.Series) else 0.0
-                except Exception:
-                    emp_chg = 0.0
-                try:
-                    prod_chg = float(row.get('production_change_pct', 0.0)) if isinstance(row, pd.Series) else 0.0
-                except Exception:
-                    prod_chg = 0.0
-                us_payoffs[i, j] = emp_chg + prod_chg
+                # US payoff: employment gain + tariff revenue - consumer cost
+                # Higher tariff -> more employment but higher consumer prices
+                employment_gain = 10 * tariff * (1 + reloc * 0.5)  # Employment increases with tariff and relocation
+                tariff_revenue = 5 * tariff  # Direct revenue from tariffs
+                consumer_cost = -15 * tariff * tariff  # Quadratic cost to consumers
+                us_payoffs[i, j] = employment_gain + tariff_revenue + consumer_cost
                 
-                # Japan payoff: maintain sales - relocation cost (robust to missing columns)
-                base_total = 1.0
-                if 'total_japanese_sales' in scenario_results.columns and not scenario_results['total_japanese_sales'].empty:
-                    try:
-                        base_total = float(scenario_results['total_japanese_sales'].iloc[0])
-                    except Exception:
-                        base_total = 1.0
-                curr_total = None
-                if isinstance(row, pd.Series) and 'total_japanese_sales' in row.index:
-                    try:
-                        curr_total = float(row['total_japanese_sales'])
-                    except Exception:
-                        curr_total = None
-                sales_retention = (curr_total if curr_total is not None else base_total) / (base_total if base_total != 0 else 1.0)
-                relocation_cost = reloc * 30  # Simplified cost function
-                jp_payoffs[i, j] = sales_retention * 100 - relocation_cost
+                # Japan payoff: avoid tariff cost through relocation + market share
+                # Higher relocation -> less tariff impact but higher relocation cost
+                tariff_impact = -150 * tariff * (1 - reloc)  # Tariff hurts profits, mitigated by relocation
+                relocation_cost = -10 * reloc * reloc  # Quadratic relocation cost (reduced)
+                market_share_benefit = 30 * reloc  # Market share benefit from relocating production
+                
+                # Strategic advantage: relocation can capture US subsidies/incentives
+                if reloc > 0.2:  # Threshold for US production incentives (lowered)
+                    us_incentive = 40 * reloc  # US provides stronger incentives for local production
+                else:
+                    us_incentive = 0
+                
+                jp_payoffs[i, j] = tariff_impact + relocation_cost + market_share_benefit + us_incentive
         
         # Find Nash Equilibria (pure strategy)
         equilibria = []

@@ -86,7 +86,12 @@ def run_q3_full_gnn(results_dir: Path, trade_df: pd.DataFrame) -> Dict[str, Any]
         seg_deg[j] += weight
     target = seg_deg / (seg_deg.max() + 1e-6)
 
-    for _ in range(100):
+    # Increase training epochs to 500 for better convergence
+    best_loss = float('inf')
+    patience = 50
+    patience_counter = 0
+    
+    for epoch in range(500):  # Increased from 100 to 500
         model.train()
         opt.zero_grad()
         _, pred = model({'country': data['country'].x, 'segment': data['segment'].x},
@@ -94,6 +99,20 @@ def run_q3_full_gnn(results_dir: Path, trade_df: pd.DataFrame) -> Dict[str, Any]
         loss = torch.mean((pred - target) ** 2)
         loss.backward()
         opt.step()
+        
+        # Early stopping
+        if loss.item() < best_loss:
+            best_loss = loss.item()
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            if patience_counter >= patience:
+                logger.info(f"Early stopping at epoch {epoch}, best loss: {best_loss:.6f}")
+                break
+        
+        # Log progress every 100 epochs
+        if (epoch + 1) % 100 == 0:
+            logger.info(f"GNN training epoch {epoch+1}/500, loss: {loss.item():.6f}")
 
     model.eval()
     with torch.no_grad():

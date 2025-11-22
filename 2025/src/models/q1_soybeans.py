@@ -105,43 +105,79 @@ class SoybeanTradeModel:
         Returns:
             DataFrame with columns: year, exporter, import_value, import_quantity, etc.
         """
-        processed_file = DATA_PROCESSED / 'q1' / 'q1_0.csv'
-        
-        if processed_file.exists():
-            df = pd.read_csv(processed_file)
-            logger.info(f"Loaded {len(df)} records from standard Q1 processed data: {processed_file}")
+        # Use the unified processed monthly file as the single source of truth
+        processed_file = DATA_PROCESSED / 'q1' / 'q1_1.csv'
+
+        if not processed_file.exists():
+            raise FileNotFoundError(f"Processed Q1 file not found: {processed_file}")
+
+        df = pd.read_csv(processed_file)
+        logger.info(f"Loaded {len(df)} records from processed Q1 data: {processed_file}")
+
+        # Standardize exporter names
+        if 'partner_desc' in df.columns:
+            exporter_col = 'partner_desc'
+        elif 'partnerDesc' in df.columns:
+            exporter_col = 'partnerDesc'
         else:
-            external_file = DATA_EXTERNAL / 'china_imports_soybeans.csv'
-            
-            if not external_file.exists():
-                logger.warning(f"External China imports file not found: {external_file}")
-                logger.info("Creating template file for manual data entry")
-                
-                # Create a template
-                template = pd.DataFrame({
-                    'year': [2020, 2020, 2020, 2021, 2021, 2021],
-                    'exporter': ['US', 'Brazil', 'Argentina'] * 2,
-                    'import_value_usd': [0, 0, 0, 0, 0, 0],
-                    'import_quantity_tonnes': [0, 0, 0, 0, 0, 0],
-                    'tariff_cn_on_exporter': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                })
-                template.to_csv(external_file, index=False)
-                logger.info(f"Template saved to {external_file} - please fill with actual data")
-                
-                df = template
-            else:
-                df = pd.read_csv(external_file)
-                logger.info(f"Loaded {len(df)} records from Chinese imports data")
-        
-        if 'unit_value' not in df.columns:
-            if 'unit_price_usd_per_ton' in df.columns:
-                df['unit_value'] = df['unit_price_usd_per_ton']
-            else:
-                df['unit_value'] = df['import_value_usd'] / df['import_quantity_tonnes']
-        
-        df['price_with_tariff'] = df['unit_value'] * (1 + df['tariff_cn_on_exporter'])
-        
-        return df
+            raise ValueError("Expected 'partner_desc' or 'partnerDesc' in Q1 processed file")
+
+        df['exporter'] = df[exporter_col].astype(str).str.strip()
+        df['exporter'] = df['exporter'].replace({
+            'USA': 'US',
+            'United States': 'US',
+            'United States of America': 'US',
+        })
+
+        # Derive year from period if not already present
+        if 'year' not in df.columns:
+            df['period'] = df['period'].astype(str)
+            df['year'] = df['period'].str.slice(0, 4).astype(int)
+
+        # Import quantity in tonnes
+        if 'quantity_tons' in df.columns:
+            df['import_quantity_tonnes'] = df['quantity_tons'].astype(float)
+        elif 'net_weight_tons' in df.columns:
+            df['import_quantity_tonnes'] = df['net_weight_tons'].astype(float)
+        elif 'netWgt' in df.columns:
+            # Legacy column: net weight in kg
+            df['import_quantity_tonnes'] = df['netWgt'].astype(float) / 1000.0
+        else:
+            raise ValueError("Expected quantity column ('quantity_tons' or 'net_weight_tons') in Q1 processed file")
+
+        # Import value in USD
+        if 'value_usd' in df.columns:
+            df['import_value_usd'] = df['value_usd'].astype(float)
+        elif 'primary_value_usd' in df.columns:
+            df['import_value_usd'] = df['primary_value_usd'].astype(float)
+        elif 'primaryValue' in df.columns:
+            df['import_value_usd'] = df['primaryValue'].astype(float)
+        else:
+            raise ValueError("Expected value column ('value_usd' or 'primary_value_usd') in Q1 processed file")
+
+        # Tariff rate applied by China on each exporter
+        if 'tariff_rate' in df.columns:
+            df['tariff_cn_on_exporter'] = df['tariff_rate'].astype(float)
+        else:
+            df['tariff_cn_on_exporter'] = 0.0
+
+        # Aggregate to annual panel by exporter for elasticity estimation
+        panel = (
+            df
+            .groupby(['year', 'exporter'], as_index=False)
+            .agg({
+                'import_value_usd': 'sum',
+                'import_quantity_tonnes': 'sum',
+                'tariff_cn_on_exporter': 'mean',  # average annual tariff
+            })
+        )
+
+        # Unit price and price including tariff
+        qty = panel['import_quantity_tonnes'].replace(0, np.nan)
+        panel['unit_value'] = (panel['import_value_usd'] / qty).fillna(0.0)
+        panel['price_with_tariff'] = panel['unit_value'] * (1 + panel['tariff_cn_on_exporter'])
+
+        return panel
     
     def prepare_panel_for_estimation(self) -> pd.DataFrame:
         """Prepare panel data for econometric estimation.
@@ -198,8 +234,8 @@ class SoybeanTradeModel:
         
         # Model 1: Import quantity response to price
         try:
-            # Simple OLS with exporter fixed effects
-            formula = 'ln_import_quantity ~ ln_price_with_tariff + C(exporter)'
+            # OLS with exporter and year fixed effects
+            formula = 'ln_import_quantity ~ ln_price_with_tariff + C(exporter) + C(year)'
             model1 = smf.ols(formula, data=panel_df).fit()
             
             self.model_results['trade_elasticity'] = model1
@@ -225,7 +261,7 @@ class SoybeanTradeModel:
             non_us = panel_df[panel_df['exporter'] != 'US'].copy()
             
             if len(non_us) > 0:
-                formula_share = 'ln_share_ratio ~ tariff_diff_vs_us + C(exporter)'
+                formula_share = 'ln_share_ratio ~ tariff_diff_vs_us + C(exporter) + C(year)'
                 model2 = smf.ols(formula_share, data=non_us).fit()
                 
                 self.model_results['share_elasticity'] = model2
@@ -460,19 +496,47 @@ class SoybeanMonthlyDataset:
         monthly['date'] = pd.to_datetime(monthly['period'], format='%Y%m')
         monthly['year'] = monthly['date'].dt.year
         monthly['month'] = monthly['date'].dt.month
-        monthly['exporter'] = monthly['partnerDesc'].str.strip()
+        # Standardize exporter column
+        if 'partner_desc' in monthly.columns:
+            exporter_col = 'partner_desc'
+        elif 'partnerDesc' in monthly.columns:
+            exporter_col = 'partnerDesc'
+        else:
+            raise ValueError("Expected 'partner_desc' or 'partnerDesc' in monthly Q1 file")
+
+        monthly['exporter'] = monthly[exporter_col].astype(str).str.strip()
         monthly['exporter'] = monthly['exporter'].replace({
             'USA': 'US',
             'United States': 'US',
             'United States of America': 'US',
         })
 
-        if '数量(万吨)' in monthly.columns:
-            monthly['import_quantity'] = monthly['数量(万吨)'] * 10000
+        # Import quantity (tonnes)
+        if 'import_quantity' in monthly.columns:
+            monthly['import_quantity'] = monthly['import_quantity'].astype(float)
+        elif 'quantity_tons' in monthly.columns:
+            monthly['import_quantity'] = monthly['quantity_tons'].astype(float)
+        elif 'net_weight_tons' in monthly.columns:
+            monthly['import_quantity'] = monthly['net_weight_tons'].astype(float)
+        elif '数量(万吨)' in monthly.columns:
+            monthly['import_quantity'] = monthly['数量(万吨)'].astype(float) * 10000
+        elif 'netWgt' in monthly.columns:
+            monthly['import_quantity'] = monthly['netWgt'].astype(float) / 1000.0
         else:
-            monthly['import_quantity'] = monthly['netWgt'] / 1000
+            raise ValueError("Expected quantity column in monthly Q1 file")
 
-        monthly['import_value'] = monthly['primaryValue']
+        # Import value (USD)
+        if 'import_value' in monthly.columns:
+            monthly['import_value'] = monthly['import_value'].astype(float)
+        elif 'value_usd' in monthly.columns:
+            monthly['import_value'] = monthly['value_usd'].astype(float)
+        elif 'primary_value_usd' in monthly.columns:
+            monthly['import_value'] = monthly['primary_value_usd'].astype(float)
+        elif 'primaryValue' in monthly.columns:
+            monthly['import_value'] = monthly['primaryValue'].astype(float)
+        else:
+            raise ValueError("Expected value column in monthly Q1 file")
+
         monthly['unit_price'] = monthly['import_value'] / (monthly['import_quantity'] + 1e-6)
 
         # Prefer monthly tariff column if present; else fall back to annual lookup
