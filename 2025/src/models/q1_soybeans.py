@@ -365,9 +365,19 @@ class SoybeanTradeModel:
                 new_tariff = row['tariff_cn_on_exporter'] + tariff_changes.get(exporter, 0.0)
                 
                 # Compute new price
-                old_price_with_tariff = row['price_with_tariff']
+                old_price_with_tariff = float(row['price_with_tariff'])
                 new_price_with_tariff = row['unit_value'] * (1 + new_tariff)
-                
+
+                # Skip rows with non-positive or invalid baseline price to avoid divide-by-zero
+                if not np.isfinite(old_price_with_tariff) or old_price_with_tariff <= 0:
+                    logger.warning(
+                        "Skipping scenario %s for exporter %s due to non-positive baseline price_with_tariff=%s",
+                        scenario_name,
+                        exporter,
+                        old_price_with_tariff,
+                    )
+                    continue
+
                 # Apply elasticity to compute new import quantity, then value
                 price_change_pct = (new_price_with_tariff / old_price_with_tariff) - 1
                 quantity_change_pct = price_elast * price_change_pct
